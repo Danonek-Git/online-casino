@@ -1,0 +1,35 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin · Statystyki{% endblock %}
+
+{% block body %}
+  <div class="page admin-page">
+    {% include 'admin/_header.html.twig' %}
+
+    <section class="admin-section">
+      <h2>Statystyki na żywo</h2>
+      <div class="admin-cards">
+        <div class="admin-card">
+          <h3>Liczba gier</h3>
+          <p>{{ games }}</p>
+        </div>
+        <div class="admin-card">
+          <h3>Suma zakładów</h3>
+          <p>{{ totalBets }}</p>
+        </div>
+        <div class="admin-card">
+          <h3>Suma wygranych</h3>
+          <p>{{ totalPayouts }}</p>
+        </div>
+        <div class="admin-card">
+          <h3>Suma przegranych</h3>
+          <p>{{ losses }}</p>
+        </div>
+        <div class="admin-card">
+          <h3>Bilans kasyna</h3>
+          <p>{{ balance }}</p>
+        </div>
+      </div>
+    </section>
+  </div>
+{% endblock %}

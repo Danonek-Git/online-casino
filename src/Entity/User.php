@@ -35,6 +35,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column]
     private ?string $password = null;
+
+    #[ORM\Column(options: ['default' => false])]
+    private bool $isBlocked = false;
     #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
     private ?Wallet $wallet = null;
 
@@ -44,9 +47,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: GameSession::class, mappedBy: 'user')]
     private Collection $gameSessions;
 
+    /**
+     * @var Collection<int, Bet>
+     */
+    #[ORM\OneToMany(targetEntity: Bet::class, mappedBy: 'user')]
+    private Collection $bets;
+
     public function __construct()
     {
         $this->gameSessions = new ArrayCollection();
+        $this->bets = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -113,6 +123,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function isBlocked(): bool
+    {
+        return $this->isBlocked;
+    }
+
+    public function setIsBlocked(bool $isBlocked): static
+    {
+        $this->isBlocked = $isBlocked;
+
+        return $this;
+    }
+
     #[\Deprecated]
     public function eraseCredentials(): void
     {
@@ -162,6 +184,31 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $gameSession->setUser(null);
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Bet>
+     */
+    public function getBets(): Collection
+    {
+        return $this->bets;
+    }
+
+    public function addBet(Bet $bet): static
+    {
+        if (!$this->bets->contains($bet)) {
+            $this->bets->add($bet);
+            $bet->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeBet(Bet $bet): static
+    {
+        $this->bets->removeElement($bet);
 
         return $this;
     }

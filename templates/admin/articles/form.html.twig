@@ -1,0 +1,39 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin · Artykuły{% endblock %}
+
+{% block body %}
+  <div class="page admin-page">
+    {% include 'admin/_header.html.twig' %}
+
+    <section class="admin-section">
+      <h2>{{ article ? 'Edytuj artykuł' : 'Dodaj artykuł' }}</h2>
+      <form method="post" class="admin-form">
+        <input type="hidden" name="_token" value="{{ csrf_token }}">
+        <label>
+          Tytuł
+          <input class="admin-input" type="text" name="title" value="{{ article ? article.title : '' }}" required>
+        </label>
+        <label>
+          Obrazek
+          <select class="admin-input" name="imagePath" required>
+            <option value="">Wybierz obrazek</option>
+            {% for image in images %}
+              <option value="{{ image }}" {% if article and article.imagePath == image %}selected{% endif %}>
+                {{ image }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          Treść
+          <textarea class="admin-input" name="content" rows="5">{{ article ? article.content : '' }}</textarea>
+        </label>
+        <div class="admin-actions">
+          <button class="btn primary" type="submit">Zapisz</button>
+          <a class="btn ghost" href="{{ path('admin_articles') }}">Powrót</a>
+        </div>
+      </form>
+    </section>
+  </div>
+{% endblock %}

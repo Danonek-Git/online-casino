@@ -1,19 +1,34 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Register{% endblock %}
+{% block title %}Rejestracja{% endblock %}
 
 {% block body %}
-    <h1>Register</h1>
+  <div class="page auth-page">
+    {% include 'partials/_main_header.html.twig' %}
 
-    {{ form_errors(registrationForm) }}
+    <div class="auth-shell">
+      <div class="auth-card">
+        <h1>Dołącz do stołu</h1>
+        <p class="auth-subtitle">Stwórz konto i odbierz startowe saldo.</p>
 
-    {{ form_start(registrationForm) }}
-        {{ form_row(registrationForm.email) }}
-        {{ form_row(registrationForm.plainPassword, {
-            label: 'Password'
-        }) }}
-        {{ form_row(registrationForm.agreeTerms) }}
+        {{ form_start(registrationForm, { attr: { class: 'auth-form' } }) }}
+          {{ form_errors(registrationForm) }}
+          <label class="auth-field">
+            <span>Email</span>
+            {{ form_widget(registrationForm.email, { attr: { class: 'auth-input', autocomplete: 'email' } }) }}
+          </label>
+          <label class="auth-field">
+            <span>Hasło</span>
+            {{ form_widget(registrationForm.plainPassword, { attr: { class: 'auth-input', autocomplete: 'new-password' } }) }}
+          </label>
+          <label class="auth-checkbox">
+            {{ form_widget(registrationForm.agreeTerms) }}
+            Akceptuję regulamin
+          </label>
 
-        <button type="submit" class="btn">Register</button>
-    {{ form_end(registrationForm) }}
+          <button type="submit" class="btn primary">Zarejestruj</button>
+        {{ form_end(registrationForm) }}
+      </div>
+    </div>
+  </div>
 {% endblock %}

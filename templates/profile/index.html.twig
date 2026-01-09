@@ -1,0 +1,52 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Profil{% endblock %}
+
+{% block body %}
+  <div class="page">
+    {% include 'partials/_main_header.html.twig' %}
+
+    <section class="profile-section">
+      <h1>Profil gracza</h1>
+      <p class="profile-subtitle">Statystyka ku przestrodze. Lub motywacji.</p>
+
+      <div class="profile-grid">
+        <div class="profile-card">
+          <span>Przegrane zakłady</span>
+          <strong>{{ lossesCount }}</strong>
+          <em>Ekspert od ryzyka.</em>
+        </div>
+        <div class="profile-card">
+          <span>Wygrane zakłady</span>
+          <strong>{{ winsCount }}</strong>
+          <em>Przynajmniej czasem.</em>
+        </div>
+        <div class="profile-card">
+          <span>Łączna strata</span>
+          <strong>{{ lostSum }} zł</strong>
+          <em>Kasyno dziękuje.</em>
+        </div>
+        <div class="profile-card">
+          <span>Łączna wygrana</span>
+          <strong>{{ wonSum }} zł</strong>
+          <em>Jeszcze nie wszystko stracone.</em>
+        </div>
+        <div class="profile-card">
+          <span>Największa porażka</span>
+          <strong>{{ biggestLoss }} zł</strong>
+          <em>To musiało boleć.</em>
+        </div>
+        <div class="profile-card">
+          <span>Największa wygrana</span>
+          <strong>{{ biggestWin }} zł</strong>
+          <em>Było blisko legendy.</em>
+        </div>
+        <div class="profile-card highlight">
+          <span>Wskaźnik szczęścia</span>
+          <strong>{{ luck }}%</strong>
+          <em>Los bywa kapryśny.</em>
+        </div>
+      </div>
+    </section>
+  </div>
+{% endblock %}
