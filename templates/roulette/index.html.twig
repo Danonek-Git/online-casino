@@ -1,0 +1,51 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Ruletka{% endblock %}
+
+{% block body %}
+  <h1>Ruletka</h1>
+
+  {% for label, messages in app.flashes %}
+    {% for message in messages %}
+      <div class="flash flash-{{ label }}">{{ message }}</div>
+    {% endfor %}
+  {% endfor %}
+
+  <div style="margin: 16px 0;">
+    <strong>Saldo:</strong>
+    {% if app.user and app.user.wallet %}
+      {{ app.user.wallet.balance }}
+    {% else %}
+      -
+    {% endif %}
+  </div>
+
+  {{ form_start(form, { action: path('roulette_play'), method: 'POST' }) }}
+    {{ form_row(form.betType) }}
+    {{ form_row(form.betValue) }}
+    {{ form_row(form.amount) }}
+    <button type="submit">Zagraj</button>
+  {{ form_end(form) }}
+
+  <hr style="margin: 24px 0;" />
+
+  <h2>Ostatnie wyniki</h2>
+
+  {% if lastSpins is empty %}
+    <p>Brak wyników.</p>
+  {% else %}
+    <ul>
+      {% for spin in lastSpins %}
+        <li>
+            {{ spin.spunAt|date('Y-m-d H:i:s') }} —
+            <strong>{{ spin.resultNumber }}</strong>
+            {% if spin.resultColor == 'green' %}
+                (green — 0)
+            {% else %}
+                ({{ spin.resultColor }})
+            {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}
