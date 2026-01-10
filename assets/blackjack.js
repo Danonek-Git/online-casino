@@ -124,58 +124,98 @@ const initBlackjack = () => {
         });
     }
 
+    const revealDealerCards = () => {
+        const dealerRow = page.querySelector('[data-dealer-cards]');
+        if (!dealerRow || page.dataset.handStatus !== 'finished') {
+            return 0;
+        }
+
+        const cards = Array.from(dealerRow.querySelectorAll('.playing-card'));
+        if (cards.length <= 1) {
+            return 0;
+        }
+
+        dealerRow.setAttribute('data-dealer-animate', 'true');
+        const pendingCards = cards.slice(1);
+        pendingCards.forEach((card) => {
+            card.classList.add('dealer-card-pending');
+        });
+
+        const startDelay = 350;
+        const stepDelay = 450;
+
+        pendingCards.forEach((card, index) => {
+            setTimeout(() => {
+                card.classList.remove('dealer-card-pending');
+                playSound('card');
+            }, startDelay + index * stepDelay);
+        });
+
+        return startDelay + pendingCards.length * stepDelay;
+    };
+
+    const revealDelay = revealDealerCards();
+
     // Result modal
     const result = page.dataset.result;
     const payout = page.dataset.payout;
     const bet = page.dataset.bet;
 
     if (result && modal) {
-        const config = RESULT_CONFIG[result] || RESULT_CONFIG.lose;
+        const showModal = () => {
+            const config = RESULT_CONFIG[result] || RESULT_CONFIG.lose;
 
-        modal.classList.add('is-visible', `result-${result}`);
+            modal.classList.add('is-visible', `result-${result}`);
 
-        // Play result sound
-        if (result === 'blackjack') {
-            playSound('blackjack');
-        } else if (result === 'win') {
-            playSound('win');
-        } else if (result === 'push') {
-            playSound('push');
-        } else {
-            playSound('lose');
-        }
-
-        const iconEl = modal.querySelector('[data-modal-icon]');
-        const titleEl = modal.querySelector('[data-modal-title]');
-        const messageEl = modal.querySelector('[data-modal-message]');
-        const payoutEl = modal.querySelector('[data-modal-payout]');
-
-        if (iconEl) iconEl.textContent = config.icon;
-        if (titleEl) titleEl.textContent = config.title;
-        if (messageEl) messageEl.textContent = config.message;
-
-        if (payoutEl) {
-            if (result === 'win' || result === 'blackjack') {
-                payoutEl.textContent = `+${payout} zł`;
+            // Play result sound
+            if (result === 'blackjack') {
+                playSound('blackjack');
+            } else if (result === 'win') {
+                playSound('win');
             } else if (result === 'push') {
-                payoutEl.textContent = `${payout} zł zwrot`;
+                playSound('push');
             } else {
-                payoutEl.textContent = `-${bet} zł`;
+                playSound('lose');
             }
-        }
 
-        const closeBtn = modal.querySelector('[data-modal-close]');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                modal.classList.remove('is-visible');
+            const iconEl = modal.querySelector('[data-modal-icon]');
+            const titleEl = modal.querySelector('[data-modal-title]');
+            const messageEl = modal.querySelector('[data-modal-message]');
+            const payoutEl = modal.querySelector('[data-modal-payout]');
+
+            if (iconEl) iconEl.textContent = config.icon;
+            if (titleEl) titleEl.textContent = config.title;
+            if (messageEl) messageEl.textContent = config.message;
+
+            if (payoutEl) {
+                if (result === 'win' || result === 'blackjack') {
+                    payoutEl.textContent = `+${payout} zł`;
+                } else if (result === 'push') {
+                    payoutEl.textContent = `${payout} zł zwrot`;
+                } else {
+                    payoutEl.textContent = `-${bet} zł`;
+                }
+            }
+
+            const closeBtn = modal.querySelector('[data-modal-close]');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    modal.classList.remove('is-visible');
+                });
+            }
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('is-visible');
+                }
             });
-        }
+        };
 
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.remove('is-visible');
-            }
-        });
+        if (revealDelay > 0) {
+            setTimeout(showModal, revealDelay);
+        } else {
+            showModal();
+        }
     }
 
     return null;

@@ -3,6 +3,7 @@
 {% block title %}Blackjack{% endblock %}
 
 {% block body %}
+  {% set displayHand = activeHand ?? lastFinishedHand %}
   {% set soundMap = {
     shuffle: asset('sounds/cards-pack-open-1.ogg'),
     card: [
@@ -17,6 +18,7 @@
     push: asset('sounds/jingles_STEEL00.ogg')
   } %}
   <div class="page blackjack-page" data-sounds="{{ soundMap|json_encode|e('html_attr') }}"
+    {% if displayHand %}data-hand-status="{{ displayHand.status }}"{% endif %}
     {% if lastFinishedHand %}data-result="{{ lastFinishedHand.result }}" data-payout="{{ lastFinishedHand.payout }}" data-bet="{{ lastFinishedHand.betAmount }}"{% endif %}>
     {% include 'partials/_main_header.html.twig' %}
 
@@ -44,23 +46,23 @@
     {% endfor %}
 
     <section class="blackjack-table">
-      {% if activeHand %}
+      {% if displayHand %}
         <div class="cards-display">
           <div class="hand-group">
             <div class="hand-label">
               <span>Krupier</span>
               <strong data-dealer-value>
-                {% if activeHand.status == 'finished' or activeHand.status == 'dealer_turn' %}
-                  {{ blackjackService.calculateHandValue(activeHand.dealerCards) }}
+                {% if displayHand.status == 'finished' or displayHand.status == 'dealer_turn' %}
+                  {{ blackjackService.calculateHandValue(displayHand.dealerCards) }}
                 {% else %}
                   ?
                 {% endif %}
               </strong>
             </div>
             <div class="cards-row" data-dealer-cards>
-              {% for card in activeHand.dealerCards %}
+              {% for card in displayHand.dealerCards %}
                 {% set cardInfo = blackjackService.getCardDisplay(card) %}
-                {% if loop.index == 2 and activeHand.status == 'playing' %}
+                {% if loop.index == 2 and displayHand.status == 'playing' %}
                   <div class="playing-card card-hidden">
                     <span class="card-back"></span>
                   </div>
@@ -79,10 +81,10 @@
           <div class="hand-group">
             <div class="hand-label">
               <span>Ty</span>
-              <strong data-player-value>{{ blackjackService.calculateHandValue(activeHand.playerCards) }}</strong>
+              <strong data-player-value>{{ blackjackService.calculateHandValue(displayHand.playerCards) }}</strong>
             </div>
             <div class="cards-row" data-player-cards>
-              {% for card in activeHand.playerCards %}
+              {% for card in displayHand.playerCards %}
                 {% set cardInfo = blackjackService.getCardDisplay(card) %}
                 <div class="playing-card {{ cardInfo.color }}">
                   <span class="card-rank">{{ cardInfo.rank }}</span>
@@ -97,38 +99,36 @@
           <div class="game-info">
             <div class="info-box">
               <span>Zakład</span>
-              <strong>{{ activeHand.betAmount }} zł</strong>
+              <strong>{{ displayHand.betAmount }} zł</strong>
             </div>
 
-            {% if activeHand.status == 'finished' %}
-              <div class="info-box result-{{ activeHand.result }}">
-                {% if activeHand.result == 'win' %}
+            {% if displayHand.status == 'finished' %}
+              <div class="info-box result-{{ displayHand.result }}">
+                {% if displayHand.result == 'win' %}
                   <span>WYGRANA!</span>
-                  <strong>+{{ activeHand.payout }} zł</strong>
-                {% elseif activeHand.result == 'blackjack' %}
+                  <strong>+{{ displayHand.payout }} zł</strong>
+                {% elseif displayHand.result == 'blackjack' %}
                   <span>BLACKJACK!</span>
-                  <strong>+{{ activeHand.payout }} zł</strong>
-                {% elseif activeHand.result == 'push' %}
+                  <strong>+{{ displayHand.payout }} zł</strong>
+                {% elseif displayHand.result == 'push' %}
                   <span>REMIS</span>
-                  <strong>{{ activeHand.payout }} zł</strong>
+                  <strong>{{ displayHand.payout }} zł</strong>
                 {% else %}
                   <span>PRZEGRANA</span>
-                  <strong>0 zł</strong>
+                  <strong>-{{ displayHand.betAmount }} zł</strong>
                 {% endif %}
               </div>
             {% endif %}
           </div>
 
           <div class="action-buttons">
-            {% if activeHand.status == 'playing' %}
+            {% if displayHand.status == 'playing' %}
               <form action="{{ path('blackjack_hit') }}" method="POST" class="inline-form">
                 <button type="submit" class="btn primary action-btn">Dobierz kartę</button>
               </form>
               <form action="{{ path('blackjack_stand') }}" method="POST" class="inline-form">
                 <button type="submit" class="btn ghost action-btn">Stój</button>
               </form>
-            {% else %}
-              <a href="{{ path('blackjack_index') }}" class="btn primary action-btn">Zagraj ponownie</a>
             {% endif %}
           </div>
         </div>
