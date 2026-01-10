@@ -1111,6 +1111,15 @@ a {
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
 }
 
+[data-dealer-animate="true"] .playing-card {
+    transition: opacity 0.35s ease, transform 0.35s ease;
+}
+
+.playing-card.dealer-card-pending {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+}
+
 .playing-card.red {
     color: #dc2626;
 }
