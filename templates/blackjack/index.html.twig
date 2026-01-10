@@ -1,0 +1,225 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Blackjack{% endblock %}
+
+{% block body %}
+  {% set soundMap = {
+    shuffle: asset('sounds/cards-pack-open-1.ogg'),
+    card: [
+      asset('sounds/card-slide-1.ogg'),
+      asset('sounds/card-slide-2.ogg'),
+      asset('sounds/card-slide-3.ogg'),
+      asset('sounds/card-slide-4.ogg')
+    ],
+    blackjack: asset('sounds/jingles_HIT01.ogg'),
+    win: asset('sounds/jingles_STEEL16.ogg'),
+    lose: asset('sounds/jingles_SAX07.ogg'),
+    push: asset('sounds/jingles_STEEL00.ogg')
+  } %}
+  <div class="page blackjack-page" data-sounds="{{ soundMap|json_encode|e('html_attr') }}"
+    {% if lastFinishedHand %}data-result="{{ lastFinishedHand.result }}" data-payout="{{ lastFinishedHand.payout }}" data-bet="{{ lastFinishedHand.betAmount }}"{% endif %}>
+    {% include 'partials/_main_header.html.twig' %}
+
+    <header class="blackjack-header">
+      <div>
+        <h1>Blackjack</h1>
+        <p>Klasyczna gra w 21. Dobij do 21 bez przebicia!</p>
+      </div>
+      <div class="balance-card">
+        <span>Saldo</span>
+        <strong data-balance>
+          {% if app.user and app.user.wallet %}
+            {{ app.user.wallet.balance }}
+          {% else %}
+            -
+          {% endif %}
+        </strong>
+      </div>
+    </header>
+
+    {% for label, messages in app.flashes %}
+      {% for message in messages %}
+        <div class="flash flash-{{ label }} flash-popup">{{ message }}</div>
+      {% endfor %}
+    {% endfor %}
+
+    <section class="blackjack-table">
+      {% if activeHand %}
+        <div class="cards-display">
+          <div class="hand-group">
+            <div class="hand-label">
+              <span>Krupier</span>
+              <strong data-dealer-value>
+                {% if activeHand.status == 'finished' or activeHand.status == 'dealer_turn' %}
+                  {{ blackjackService.calculateHandValue(activeHand.dealerCards) }}
+                {% else %}
+                  ?
+                {% endif %}
+              </strong>
+            </div>
+            <div class="cards-row" data-dealer-cards>
+              {% for card in activeHand.dealerCards %}
+                {% set cardInfo = blackjackService.getCardDisplay(card) %}
+                {% if loop.index == 2 and activeHand.status == 'playing' %}
+                  <div class="playing-card card-hidden">
+                    <span class="card-back"></span>
+                  </div>
+                {% else %}
+                  <div class="playing-card {{ cardInfo.color }}">
+                    <span class="card-rank">{{ cardInfo.rank }}</span>
+                    <span class="card-suit">{{ cardInfo.suit }}</span>
+                  </div>
+                {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="vs-divider">VS</div>
+
+          <div class="hand-group">
+            <div class="hand-label">
+              <span>Ty</span>
+              <strong data-player-value>{{ blackjackService.calculateHandValue(activeHand.playerCards) }}</strong>
+            </div>
+            <div class="cards-row" data-player-cards>
+              {% for card in activeHand.playerCards %}
+                {% set cardInfo = blackjackService.getCardDisplay(card) %}
+                <div class="playing-card {{ cardInfo.color }}">
+                  <span class="card-rank">{{ cardInfo.rank }}</span>
+                  <span class="card-suit">{{ cardInfo.suit }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="game-controls">
+          <div class="game-info">
+            <div class="info-box">
+              <span>Zakład</span>
+              <strong>{{ activeHand.betAmount }} zł</strong>
+            </div>
+
+            {% if activeHand.status == 'finished' %}
+              <div class="info-box result-{{ activeHand.result }}">
+                {% if activeHand.result == 'win' %}
+                  <span>WYGRANA!</span>
+                  <strong>+{{ activeHand.payout }} zł</strong>
+                {% elseif activeHand.result == 'blackjack' %}
+                  <span>BLACKJACK!</span>
+                  <strong>+{{ activeHand.payout }} zł</strong>
+                {% elseif activeHand.result == 'push' %}
+                  <span>REMIS</span>
+                  <strong>{{ activeHand.payout }} zł</strong>
+                {% else %}
+                  <span>PRZEGRANA</span>
+                  <strong>0 zł</strong>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="action-buttons">
+            {% if activeHand.status == 'playing' %}
+              <form action="{{ path('blackjack_hit') }}" method="POST" class="inline-form">
+                <button type="submit" class="btn primary action-btn">Dobierz kartę</button>
+              </form>
+              <form action="{{ path('blackjack_stand') }}" method="POST" class="inline-form">
+                <button type="submit" class="btn ghost action-btn">Stój</button>
+              </form>
+            {% else %}
+              <a href="{{ path('blackjack_index') }}" class="btn primary action-btn">Zagraj ponownie</a>
+            {% endif %}
+          </div>
+        </div>
+
+      {% else %}
+        <div class="empty-table">
+          <div class="cards-placeholder">
+            <div class="playing-card card-placeholder"></div>
+            <div class="playing-card card-placeholder"></div>
+            <div class="vs-divider">VS</div>
+            <div class="playing-card card-placeholder"></div>
+            <div class="playing-card card-placeholder"></div>
+          </div>
+          <p>Postaw zakład i rozpocznij grę</p>
+        </div>
+      {% endif %}
+    </section>
+
+    {% if not activeHand or activeHand.status == 'finished' %}
+    <section class="bet-panel blackjack-bet-panel">
+      {% if app.user %}
+        <form action="{{ path('blackjack_deal') }}" method="POST" class="blackjack-bet-form">
+          <div class="amount-group">
+            <label>Stawka</label>
+            <input type="number" name="amount" min="1" value="100" class="amount-input" data-amount-input>
+          </div>
+          <div class="quick-actions">
+            <button type="button" class="chip ghost" data-amount-clear>Clear</button>
+            <button type="button" class="chip" data-amount-add="10">+10</button>
+            <button type="button" class="chip" data-amount-add="100">+100</button>
+            <button type="button" class="chip" data-amount-add="1000">+1000</button>
+            <button type="button" class="chip" data-amount-mul="0.5">/2</button>
+            <button type="button" class="chip" data-amount-mul="2">x2</button>
+            <button type="button" class="chip ghost" data-amount-max>Max</button>
+          </div>
+          <button type="submit" class="place-bet">Rozdaj karty</button>
+        </form>
+      {% else %}
+        <p class="bet-note">Zaloguj sie, aby grac.</p>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    {% if recentHands is not empty %}
+      <section class="blackjack-history">
+        <h2>Ostatnie gry</h2>
+        <div class="history-grid">
+          {% for hand in recentHands %}
+            <div class="history-card result-{{ hand.result }}">
+              <div class="history-hands">
+                <div class="history-hand">
+                  <span class="history-hand-label">K</span>
+                  <span class="history-hand-cards">
+                    {% for card in hand.dealerCards %}
+                      {% set info = blackjackService.getCardDisplay(card) %}
+                      <span class="mini-card {{ info.color }}">{{ info.rank }}{{ info.suit }}</span>
+                    {% endfor %}
+                  </span>
+                  <span class="history-hand-value">{{ blackjackService.calculateHandValue(hand.dealerCards) }}</span>
+                </div>
+                <div class="history-hand">
+                  <span class="history-hand-label">Ty</span>
+                  <span class="history-hand-cards">
+                    {% for card in hand.playerCards %}
+                      {% set info = blackjackService.getCardDisplay(card) %}
+                      <span class="mini-card {{ info.color }}">{{ info.rank }}{{ info.suit }}</span>
+                    {% endfor %}
+                  </span>
+                  <span class="history-hand-value">{{ blackjackService.calculateHandValue(hand.playerCards) }}</span>
+                </div>
+              </div>
+              <div class="history-result-row">
+                <span class="history-result-badge">
+                  {% if hand.result == 'blackjack' %}BLACKJACK{% elseif hand.result == 'win' %}WYGRANA{% elseif hand.result == 'push' %}REMIS{% else %}PRZEGRANA{% endif %}
+                </span>
+                <span class="history-bet">{{ hand.betAmount }} zł</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    <div class="result-modal" data-result-modal data-turbo-temporary>
+      <div class="result-modal-content">
+        <div class="result-modal-icon" data-modal-icon></div>
+        <h2 data-modal-title></h2>
+        <p data-modal-message></p>
+        <div class="result-modal-payout" data-modal-payout></div>
+        <button class="btn primary" data-modal-close>Kontynuuj</button>
+      </div>
+    </div>
+  </div>
+{% endblock %}
