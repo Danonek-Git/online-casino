@@ -1,34 +1,45 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Log in!{% endblock %}
+{% block title %}Logowanie{% endblock %}
 
 {% block body %}
-<form method="post">
-    {% if error %}
-        <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
-    {% endif %}
+  <div class="page auth-page">
+    {% include 'partials/_main_header.html.twig' %}
 
-    {% if app.user %}
-        <div class="mb-3">
-            You are logged in as {{ app.user.userIdentifier }}, <a href="{{ logout_path() }}">Logout</a>
-        </div>
-    {% endif %}
+    <div class="auth-shell">
+      <div class="auth-card">
+        <h1>Zaloguj się</h1>
+        <p class="auth-subtitle">Wróć do gry i sprawdź saldo.</p>
 
-    <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
-    <label for="inputEmail">Email</label>
-    <input type="email" value="{{ last_username }}" name="email" id="inputEmail" class="form-control" autocomplete="email" required autofocus>
-    <label for="inputPassword">Password</label>
-    <input type="password" name="password" id="inputPassword" class="form-control" autocomplete="current-password" required>
-    <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
+        {% if error %}
+          <div class="flash flash-error flash-popup">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+        {% endif %}
 
-    <div class="checkbox mb-3">
-        <label>
-            <input type="checkbox" name="_remember_me"> Remember me
-        </label>
+        {% if app.user %}
+          <div class="flash flash-success flash-popup">
+            Zalogowany jako {{ app.user.userIdentifier }}.
+          </div>
+        {% endif %}
+
+        <form method="post" class="auth-form">
+          <label class="auth-field">
+            <span>Email</span>
+            <input type="email" value="{{ last_username }}" name="email" id="inputEmail" class="auth-input" autocomplete="email" required autofocus>
+          </label>
+          <label class="auth-field">
+            <span>Hasło</span>
+            <input type="password" name="password" id="inputPassword" class="auth-input" autocomplete="current-password" required>
+          </label>
+          <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('authenticate') }}">
+
+          <label class="auth-checkbox">
+            <input type="checkbox" name="_remember_me">
+            Zapamiętaj mnie
+          </label>
+
+          <button class="btn primary" type="submit">Zaloguj</button>
+        </form>
+      </div>
     </div>
-
-    <button class="btn btn-lg btn-primary" type="submit">
-        Sign in
-    </button>
-</form>
+  </div>
 {% endblock %}

@@ -1,0 +1,21 @@
+<header class="site-header">
+  <div class="brand">
+    <span class="brand-mark">OC</span>
+    <span class="brand-name">Panel administratora</span>
+  </div>
+  <nav class="auth-actions">
+    <a class="btn ghost" href="{{ path('admin_index') }}">Dashboard</a>
+    <a class="btn ghost" href="{{ path('admin_users') }}">Użytkownicy</a>
+    <a class="btn ghost" href="{{ path('admin_history') }}">Historia</a>
+    <a class="btn ghost" href="{{ path('admin_stats') }}">Statystyki</a>
+    <a class="btn ghost" href="{{ path('admin_articles') }}">Artykuły</a>
+    <a class="btn ghost" href="{{ path('app_home') }}">Strona główna</a>
+    <a class="btn ghost" href="{{ path('app_logout') }}">Wyloguj</a>
+  </nav>
+</header>
+
+{% for label, messages in app.flashes %}
+  {% for message in messages %}
+    <div class="flash flash-{{ label }} flash-popup">{{ message }}</div>
+  {% endfor %}
+{% endfor %}

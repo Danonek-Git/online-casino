@@ -2,11 +2,11 @@
 
 namespace App\Controller;
 
-use App\Entity\RouletteSpin;
 use App\Form\RouletteBetType;
-use App\Repository\RouletteSpinRepository;
+use App\Repository\RouletteRoundRepository;
 use App\Service\RouletteService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -16,21 +16,32 @@ final class RouletteController extends AbstractController
     #[Route('/roulette', name: 'roulette_index', methods: ['GET'])]
     public function index(
         Request $request,
-        RouletteSpinRepository $spinRepository
+        RouletteService $rouletteService,
+        RouletteRoundRepository $roundRepository
     ): Response {
         $form = $this->createForm(RouletteBetType::class);
-        $form->handleRequest($request);
+        $round = $rouletteService->syncAndGetCurrentRound();
+        $lastRounds = $roundRepository->findLastResolved(10);
 
-        $lastSpins = $spinRepository->findBy([], ['spunAt' => 'DESC'], 10);
+        $redNumbers = [
+            1, 3, 5, 7, 9,
+            12, 14, 16, 18,
+            19, 21, 23, 25, 27,
+            30, 32, 34, 36,
+        ];
 
         return $this->render('roulette/index.html.twig', [
             'form' => $form->createView(),
-            'lastSpins' => $lastSpins,
+            'round' => $round,
+            'lastRounds' => $lastRounds,
+            'serverTime' => new \DateTimeImmutable(),
+            'wheelNumbers' => range(0, 36),
+            'redNumbers' => $redNumbers,
         ]);
     }
 
-    #[Route('/roulette/play', name: 'roulette_play', methods: ['POST'])]
-    public function play(
+    #[Route('/roulette/bet', name: 'roulette_bet', methods: ['POST'])]
+    public function placeBet(
         Request $request,
         RouletteService $rouletteService
     ): Response {
@@ -48,30 +59,53 @@ final class RouletteController extends AbstractController
         $data = $form->getData();
 
         try {
-            [$spin, $bet] = $rouletteService->playRound(
+            $round = $rouletteService->syncAndGetCurrentRound();
+            $rouletteService->placeBet(
                 $this->getUser(),
+                $round,
                 $data['betType'],
                 $data['betValue'],
                 (int) $data['amount']
             );
-
-            if ($bet->isWin()) {
-                $this->addFlash('success', sprintf(
-                    'Wygrałeś! Wynik: %d (%s). Wypłata: %d',
-                    $spin->getResultNumber(),
-                    $spin->getResultColor(),
-                    (int) $bet->getPayout()
-                ));
-            } else {
-                $this->addFlash('error', sprintf(
-                    'Przegrałeś. Wynik: %d (%s).',
-                    $spin->getResultNumber(),
-                    $spin->getResultColor()
-                ));
-            }
+            $this->addFlash('success', 'Zakład przyjęty.');
         } catch (\Throwable $e) {
             $this->addFlash('error', $e->getMessage());
         }
         return $this->redirectToRoute('roulette_index');
+    }
+
+    #[Route('/roulette/state', name: 'roulette_state', methods: ['GET'])]
+    public function state(
+        RouletteService $rouletteService,
+        RouletteRoundRepository $roundRepository
+    ): JsonResponse {
+        $round = $rouletteService->syncAndGetCurrentRound();
+        $lastRounds = $roundRepository->findLastResolved(10);
+
+        $history = [];
+        foreach ($lastRounds as $item) {
+            $history[] = [
+                'number' => $item->getResultNumber(),
+                'color' => $item->getResultColor(),
+            ];
+        }
+        $balance = null;
+        $user = $this->getUser();
+        if ($user instanceof \App\Entity\User && $user->getWallet() !== null) {
+            $balance = $user->getWallet()->getBalance();
+        }
+
+        return $this->json([
+            'serverTime' => (new \DateTimeImmutable())->format(DATE_ATOM),
+            'round' => [
+                'id' => $round->getId(),
+                'status' => $round->getStatus(),
+                'endsAt' => $round->getEndsAt()?->format(DATE_ATOM),
+                'resultNumber' => $round->getResultNumber(),
+                'resultColor' => $round->getResultColor(),
+            ],
+            'history' => $history,
+            'balance' => $balance,
+        ]);
     }
 }

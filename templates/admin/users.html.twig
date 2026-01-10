@@ -1,0 +1,52 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin · Użytkownicy{% endblock %}
+
+{% block body %}
+  <div class="page admin-page">
+    {% include 'admin/_header.html.twig' %}
+
+    <section class="admin-section">
+      <div class="admin-section-header">
+        <h2>Użytkownicy</h2>
+        <form method="post" action="{{ path('admin_users_bonus') }}">
+          <input type="hidden" name="_token" value="{{ csrf_token('admin_users_bonus') }}">
+          <button class="btn primary" type="submit">Dodaj wszystkim +1000</button>
+        </form>
+      </div>
+
+      <div class="admin-table">
+        <div class="admin-table-row admin-table-head">
+          <span>ID</span>
+          <span>Email</span>
+          <span>Saldo</span>
+          <span>Status</span>
+          <span>Akcje</span>
+        </div>
+        {% for user in users %}
+          <div class="admin-table-row">
+            <span>#{{ user.id }}</span>
+            <span>{{ user.email }}</span>
+            <span>{{ user.wallet ? user.wallet.balance : 0 }}</span>
+            <span>{{ user.isBlocked ? 'Zablokowany' : 'Aktywny' }}</span>
+            <div class="admin-actions">
+              <form method="post" action="{{ path('admin_user_balance', { id: user.id }) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_user_balance_' ~ user.id) }}">
+                <input class="admin-input" type="number" name="balance" value="{{ user.wallet ? user.wallet.balance : 0 }}" />
+                <button class="btn ghost" type="submit">Zapisz</button>
+              </form>
+              <form method="post" action="{{ path('admin_user_toggle_block', { id: user.id }) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_user_block_' ~ user.id) }}">
+                <button class="btn muted" type="submit">
+                  {{ user.isBlocked ? 'Odblokuj' : 'Zablokuj' }}
+                </button>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <div class="admin-empty">Brak użytkowników.</div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+{% endblock %}

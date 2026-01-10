@@ -3,13 +3,30 @@
 {% block title %}Online Casino{% endblock %}
 
 {% block body %}
-    <h1>Online Casino</h1>
+    <div class="page">
+        {% include 'partials/_main_header.html.twig' %}
 
-    {% if app.user %}
-        <p>Zalogowany jako: {{ app.user.userIdentifier }}</p>
-        <p><a href="{{ path('app_logout') }}">Wyloguj</a></p>
-    {% else %}
-        <p><a href="{{ path('app_login') }}">Zaloguj</a></p>
-        <p><a href="{{ path('app_register') }}">Zarejestruj</a></p>
-    {% endif %}
+        <main class="hero">
+            <section class="hero-banner split">
+                <div class="hero-text">
+                    <h1>Kasyno online, <span>nocny klimat</span></h1>
+                    <p>
+                        Wybierz grę i sprawdź swój styl. Startujemy od ruletki,
+                        kolejne stoliki już w drodze.
+                    </p>
+                    <a class="btn xl primary hero-cta" href="{{ path('roulette_index') }}">Przegraj siano</a>
+                </div>
+                <div class="hero-media">
+                    <img class="hero-image" src="{{ asset('articles/lebron.webp') }}" alt="Kasyno online">
+                </div>
+            </section>
+
+            <div class="game-grid">
+                <a class="btn xl primary" href="{{ path('roulette_index') }}">Ruletka</a>
+                <a class="btn xl muted" href="#" aria-disabled="true">Blackjack (wkrótce)</a>
+                <a class="btn xl muted" href="#" aria-disabled="true">Sloty (wkrótce)</a>
+                <a class="btn xl muted" href="#" aria-disabled="true">Inne Scamy (wkrótce)</a>
+            </div>
+        </main>
+    </div>
 {% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin · Historia{% endblock %}
+
+{% block body %}
+  <div class="page admin-page">
+    {% include 'admin/_header.html.twig' %}
+
+    <section class="admin-section">
+      <h2>Zakłady</h2>
+      <div class="admin-table">
+        <div class="admin-table-row admin-table-head">
+          <span>ID</span>
+          <span>Użytkownik</span>
+          <span>Typ</span>
+          <span>Wartość</span>
+          <span>Kwota</span>
+          <span>Wygrana</span>
+          <span>Wypłata</span>
+          <span>Runda</span>
+          <span>Data</span>
+        </div>
+        {% for bet in bets %}
+          <div class="admin-table-row">
+            <span>#{{ bet.id }}</span>
+            <span>{{ bet.user ? bet.user.email : '-' }}</span>
+            <span>{{ bet.betType }}</span>
+            <span>{{ bet.betValue }}</span>
+            <span>{{ bet.amount }}</span>
+            <span>{{ bet.isWin is null ? '-' : (bet.isWin ? 'Tak' : 'Nie') }}</span>
+            <span>{{ bet.payout ?? 0 }}</span>
+            <span>{{ bet.round ? bet.round.id : '-' }}</span>
+            <span>{{ bet.placedAt ? bet.placedAt|date('Y-m-d H:i') : '-' }}</span>
+          </div>
+        {% else %}
+          <div class="admin-empty">Brak zakładów.</div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="admin-section">
+      <h2>Sesje gier</h2>
+      <div class="admin-table">
+        <div class="admin-table-row admin-table-head">
+          <span>ID</span>
+          <span>Użytkownik</span>
+          <span>Typ</span>
+          <span>Status</span>
+          <span>Start</span>
+          <span>Koniec</span>
+        </div>
+        {% for session in sessions %}
+          <div class="admin-table-row">
+            <span>#{{ session.id }}</span>
+            <span>{{ session.user ? session.user.email : '-' }}</span>
+            <span>{{ session.gameType }}</span>
+            <span>{{ session.status }}</span>
+            <span>{{ session.startedAt ? session.startedAt|date('Y-m-d H:i') : '-' }}</span>
+            <span>{{ session.finishedAt ? session.finishedAt|date('Y-m-d H:i') : '-' }}</span>
+          </div>
+        {% else %}
+          <div class="admin-empty">Brak sesji.</div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+{% endblock %}

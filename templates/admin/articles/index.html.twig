@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin · Artykuły{% endblock %}
+
+{% block body %}
+  <div class="page admin-page">
+    {% include 'admin/_header.html.twig' %}
+
+    <section class="admin-section">
+      <div class="admin-section-header">
+        <h2>Artykuły</h2>
+        <a class="btn primary" href="{{ path('admin_articles_new') }}">Dodaj artykuł</a>
+      </div>
+
+      <div class="admin-table">
+        <div class="admin-table-row admin-table-head">
+          <span>ID</span>
+          <span>Tytuł</span>
+          <span>Obrazek</span>
+          <span>Data</span>
+          <span>Akcje</span>
+        </div>
+        {% for article in articles %}
+          <div class="admin-table-row">
+            <span>#{{ article.id }}</span>
+            <span>{{ article.title }}</span>
+            <span>{{ article.imagePath }}</span>
+            <span>{{ article.createdAt|date('Y-m-d') }}</span>
+            <div class="admin-actions">
+              <a class="btn ghost" href="{{ path('admin_articles_edit', { id: article.id }) }}">Edytuj</a>
+              <form method="post" action="{{ path('admin_articles_delete', { id: article.id }) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('admin_article_delete_' ~ article.id) }}">
+                <button class="btn muted" type="submit">Usuń</button>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <div class="admin-empty">Brak artykułów.</div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+{% endblock %}

@@ -5,19 +5,47 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\Bet;
-use App\Entity\GameSession;
-use App\Entity\RouletteSpin;
+use App\Entity\RouletteRound;
 use App\Entity\User;
+use App\Repository\RouletteRoundRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 final class RouletteService
 {
+    private const ROUND_DURATION_SECONDS = 30;
+    private const ROUND_RESULT_PAUSE_SECONDS = 15;
+
     public function __construct(
-        private readonly EntityManagerInterface $entityManager
+        private readonly EntityManagerInterface $entityManager,
+        private readonly RouletteRoundRepository $roundRepository
     ) {
     }
 
-    public function playRound(User $user, string $betType, string $betValue, int $amount): array
+    public function syncAndGetCurrentRound(): RouletteRound
+    {
+        $now = new \DateTimeImmutable();
+        $round = $this->roundRepository->findLatest();
+
+        if ($round === null) {
+            return $this->createRound($now);
+        }
+
+        if ($round->getStatus() === RouletteRound::STATUS_OPEN && $round->getEndsAt() <= $now) {
+            $this->resolveRound($round);
+            return $round;
+        }
+
+        if ($round->getStatus() === RouletteRound::STATUS_FINISHED && $round->getEndsAt() <= $now) {
+            $nextRoundAt = $round->getEndsAt()?->modify(sprintf('+%d seconds', self::ROUND_RESULT_PAUSE_SECONDS));
+            if ($nextRoundAt !== null && $now >= $nextRoundAt) {
+                return $this->createRound($now);
+            }
+        }
+
+        return $round;
+    }
+
+    public function placeBet(User $user, RouletteRound $round, string $betType, string $betValue, int $amount): Bet
     {
         $wallet = $user->getWallet();
         if ($wallet === null) {
@@ -32,47 +60,65 @@ final class RouletteService
             throw new \RuntimeException('Not enough balance.');
         }
 
-        $session = new GameSession();
-        $session->setUser($user);
-        $session->setGameType(GameSession::TYPE_ROULETTE);
-        $session->setStatus(GameSession::STATUS_OPEN);
+        if ($round->getStatus() !== RouletteRound::STATUS_OPEN || $round->getEndsAt() <= new \DateTimeImmutable()) {
+            throw new \RuntimeException('Betting for this round is closed.');
+        }
+
+        $betType = strtolower(trim($betType));
+        $betValue = strtolower(trim($betValue));
 
         $bet = new Bet();
         $bet->setBetType($betType);
         $bet->setBetValue($betValue);
         $bet->setAmount($amount);
-
-        $session->addBet($bet);
+        $bet->setUser($user);
+        $bet->setRound($round);
+        $user->addBet($bet);
+        $round->addBet($bet);
 
         $wallet->setBalance($wallet->getBalance() - $amount);
 
+        $this->entityManager->persist($bet);
+        $this->entityManager->flush();
+
+        return $bet;
+    }
+
+    public function resolveRound(RouletteRound $round): void
+    {
+        if ($round->getStatus() !== RouletteRound::STATUS_OPEN) {
+            return;
+        }
+
         [$number, $color] = $this->drawResult();
 
-        $spin = new RouletteSpin();
-        $spin->setResultNumber($number);
-        $spin->setResultColor($color);
-        $session->setRouletteSpin($spin);
+        $round->setResultNumber($number);
+        $round->setResultColor($color);
+        $round->setResolvedAt(new \DateTimeImmutable());
+        $round->setStatus(RouletteRound::STATUS_FINISHED);
 
-        foreach ($session->getBets() as $b) {
+        foreach ($round->getBets() as $b) {
             [$isWin, $payout] = $this->calculatePayout($b, $number, $color);
             $b->setIsWin($isWin);
             $b->setPayout($payout);
 
             if ($payout > 0) {
+                $wallet = $b->getUser()->getWallet();
+                if ($wallet !== null) {
                 $wallet->setBalance($wallet->getBalance() + $payout);
+                }
             }
         }
 
-        $session->setStatus(GameSession::STATUS_FINISHED);
-        $session->setFinishedAt(new \DateTimeImmutable());
-
-        $this->entityManager->persist($session);
-        $this->entityManager->persist($bet);
-        $this->entityManager->persist($spin);
-
         $this->entityManager->flush();
+    }
 
-        return [$spin, $bet];
+    /**
+     * @return array<int, RouletteRound>
+     */
+    public function getLastResults(int $limit = 10): array
+    {
+        return $this->roundRepository->findLastResolved($limit);
     }
     /**
      * @return array{0:int,1:string} [number, color]
@@ -106,10 +152,6 @@ final class RouletteService
         $amount = $bet->getAmount();
 
         if ($resultNumber === 0) {
-            if ($type === 'number' && $value === '0') {
-                return [true, $amount * 36];
-            }
-
             return [false, 0];
         }
 
@@ -119,6 +161,7 @@ final class RouletteService
         }
 
         if ($type === 'color') {
+            $value = strtolower($value);
             $isWin = ($resultColor === $value);
             return [$isWin, $isWin ? $amount * 2 : 0];
         }
@@ -130,5 +173,18 @@ final class RouletteService
             return [$isWin, $isWin ? $amount * 2 : 0];
         }
         return [false, 0];
+    }
+
+    private function createRound(\DateTimeImmutable $now): RouletteRound
+    {
+        $round = new RouletteRound();
+        $round->setStartedAt($now);
+        $round->setEndsAt($now->modify(sprintf('+%d seconds', self::ROUND_DURATION_SECONDS)));
+        $round->setStatus(RouletteRound::STATUS_OPEN);
+
+        $this->entityManager->persist($round);
+        $this->entityManager->flush();
+
+        return $round;
     }
 }

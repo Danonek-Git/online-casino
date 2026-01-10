@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Panel administratora{% endblock %}
+
+{% block body %}
+  <div class="page admin-page">
+    {% include 'admin/_header.html.twig' %}
+
+    <main class="admin-grid">
+      <a class="admin-card" href="{{ path('admin_users') }}">
+        <h3>Użytkownicy</h3>
+        <p>Saldo, blokady, szybkie akcje.</p>
+      </a>
+      <a class="admin-card" href="{{ path('admin_history') }}">
+        <h3>Historia</h3>
+        <p>Zakłady i rundy wszystkich graczy.</p>
+      </a>
+      <a class="admin-card" href="{{ path('admin_stats') }}">
+        <h3>Statystyki</h3>
+        <p>Bilans kasyna na żywo.</p>
+      </a>
+      <a class="admin-card" href="{{ path('admin_articles') }}">
+        <h3>Artykuły</h3>
+        <p>Prosty CRUD treści.</p>
+      </a>
+    </main>
+  </div>
+{% endblock %}

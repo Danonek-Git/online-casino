@@ -35,9 +35,17 @@ class Bet
     #[ORM\Column]
     private ?\DateTimeImmutable $placedAt = null;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?GameSession $gameSession = null;
+
     #[ORM\ManyToOne(inversedBy: 'bets')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?GameSession $gameSession = null;
+    private ?RouletteRound $round = null;
+
+    #[ORM\ManyToOne(inversedBy: 'bets')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $user = null;
 
     public function __construct()
     {
@@ -128,6 +136,30 @@ class Bet
     public function setGameSession(?GameSession $gameSession): static
     {
         $this->gameSession = $gameSession;
+
+        return $this;
+    }
+
+    public function getRound(): ?RouletteRound
+    {
+        return $this->round;
+    }
+
+    public function setRound(?RouletteRound $round): static
+    {
+        $this->round = $round;
+
+        return $this;
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(User $user): static
+    {
+        $this->user = $user;
 
         return $this;
     }
