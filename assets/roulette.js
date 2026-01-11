@@ -393,21 +393,21 @@ const initRoulette = () => {
             statusEl.textContent = 'Zakłady otwarte';
             stopRolling();
         } else if (shouldRoll) {
-            statusEl.textContent = 'ROLLING...';
+            statusEl.textContent = 'Trwa losowanie...';
             startRolling();
         } else if (!settleDone) {
-            statusEl.textContent = 'ROLLING...';
+            statusEl.textContent = 'Trwa losowanie...';
             stopRolling();
         } else if (isResetting) {
             updateResultVisibility();
-            statusEl.textContent = `Wynik: ${pendingResult} • resetowanie maszyny do scamowania`;
+            statusEl.textContent = `Wynik: ${pendingResult} •, resetowanie maszyny do scamowania`;
             stopRolling();
         } else if (hasPendingResult()) {
             updateResultVisibility();
             statusEl.textContent = `Wynik: ${pendingResult}`;
             stopRolling();
         } else {
-            statusEl.textContent = 'Oczekiwanie...';
+            statusEl.textContent = 'Oczekiwanie na zakłady...';
             startRolling();
         }
 
