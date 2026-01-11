@@ -1,0 +1,26 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          port: ${{ secrets.PROD_SSH_PORT }}
+          script: |
+            set -euo pipefail
+            cd ${{ secrets.PROD_DEPLOY_PATH }}
+            git fetch --prune
+            git checkout main
+            git pull --ff-only origin main
+            php bin/console doctrine:migrations:migrate --no-interaction
