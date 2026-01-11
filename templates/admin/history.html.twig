@@ -6,11 +6,110 @@
   <div class="page admin-page">
     {% include 'admin/_header.html.twig' %}
 
+    {% set query = app.request.query.all %}
+
     <section class="admin-section">
-      <h2>Zakłady</h2>
+      <div class="admin-section-header">
+        <h2>Historia gier</h2>
+        <div class="admin-actions">
+          <a class="btn {{ type == 'roulette' ? 'primary' : 'ghost' }}" href="{{ path('admin_history', { type: 'roulette' }) }}">Ruletka</a>
+          <a class="btn {{ type == 'blackjack' ? 'primary' : 'ghost' }}" href="{{ path('admin_history', { type: 'blackjack' }) }}">Blackjack</a>
+        </div>
+      </div>
+
+      {% if type == 'roulette' %}
+        <form method="get" class="admin-filters">
+          <input type="hidden" name="type" value="roulette" />
+          <label>
+            Użytkownik
+            <input class="admin-input" type="text" name="user" value="{{ filters.user ?? '' }}" placeholder="email lub fragment" />
+          </label>
+          <label>
+            Kolor
+            <select class="admin-input" name="betColor">
+              <option value="">Wszystkie</option>
+              <option value="red" {% if filters.betColor == 'red' %}selected{% endif %}>Czerwony</option>
+              <option value="black" {% if filters.betColor == 'black' %}selected{% endif %}>Czarny</option>
+            </select>
+          </label>
+          <label>
+            Numer
+            <input class="admin-input" type="number" name="betNumber" min="1" max="36" value="{{ filters.betNumber ?? '' }}" placeholder="1-36" />
+          </label>
+          <label>
+            Wygrana
+            <select class="admin-input" name="isWin">
+              <option value="">Wszystkie</option>
+              <option value="yes" {% if filters.isWin == 'yes' %}selected{% endif %}>Tak</option>
+              <option value="no" {% if filters.isWin == 'no' %}selected{% endif %}>Nie</option>
+            </select>
+          </label>
+          <label>
+            Runda
+            <input class="admin-input" type="number" name="roundId" min="1" value="{{ filters.roundId ?? '' }}" />
+          </label>
+          <label>
+            Czas
+            <select class="admin-input" name="sort">
+              <option value="desc" {% if (filters.sort ?? 'desc') == 'desc' %}selected{% endif %}>Najnowsze</option>
+              <option value="asc" {% if filters.sort == 'asc' %}selected{% endif %}>Najstarsze</option>
+            </select>
+          </label>
+          <div class="admin-actions admin-filters-actions">
+            <button class="btn primary" type="submit">Filtruj</button>
+            <a class="btn ghost" href="{{ path('admin_history', { type: 'roulette' }) }}">Wyczyść</a>
+          </div>
+        </form>
+      {% else %}
+        <form method="get" class="admin-filters">
+          <input type="hidden" name="type" value="blackjack" />
+          <label>
+            Użytkownik
+            <input class="admin-input" type="text" name="user" value="{{ filters.user ?? '' }}" placeholder="email lub fragment" />
+          </label>
+          <label>
+            Wynik
+            <select class="admin-input" name="result">
+              <option value="">Wszystkie</option>
+              <option value="win" {% if filters.result == 'win' %}selected{% endif %}>Wygrana</option>
+              <option value="lose" {% if filters.result == 'lose' %}selected{% endif %}>Przegrana</option>
+              <option value="push" {% if filters.result == 'push' %}selected{% endif %}>Remis</option>
+              <option value="blackjack" {% if filters.result == 'blackjack' %}selected{% endif %}>Blackjack</option>
+            </select>
+          </label>
+          <label>
+            Status
+            <select class="admin-input" name="status">
+              <option value="">Wszystkie</option>
+              <option value="betting" {% if filters.status == 'betting' %}selected{% endif %}>Zakład</option>
+              <option value="playing" {% if filters.status == 'playing' %}selected{% endif %}>Gra</option>
+              <option value="dealer_turn" {% if filters.status == 'dealer_turn' %}selected{% endif %}>Krupier</option>
+              <option value="finished" {% if filters.status == 'finished' %}selected{% endif %}>Zakończona</option>
+            </select>
+          </label>
+          <label>
+            Czas
+            <select class="admin-input" name="sort">
+              <option value="desc" {% if (filters.sort ?? 'desc') == 'desc' %}selected{% endif %}>Najnowsze</option>
+              <option value="asc" {% if filters.sort == 'asc' %}selected{% endif %}>Najstarsze</option>
+            </select>
+          </label>
+          <div class="admin-actions admin-filters-actions">
+            <button class="btn primary" type="submit">Filtruj</button>
+            <a class="btn ghost" href="{{ path('admin_history', { type: 'blackjack' }) }}">Wyczyść</a>
+          </div>
+        </form>
+      {% endif %}
+    </section>
+
+    {% if type == 'roulette' %}
+    <section class="admin-section">
+      <div class="admin-section-header">
+        <h2>Zakłady</h2>
+        <span>Wyniki: {{ pagination.total }}</span>
+      </div>
       <div class="admin-table">
         <div class="admin-table-row admin-table-head">
-          <span>ID</span>
           <span>Użytkownik</span>
           <span>Typ</span>
           <span>Wartość</span>
@@ -22,7 +121,6 @@
         </div>
         {% for bet in bets %}
           <div class="admin-table-row">
-            <span>#{{ bet.id }}</span>
             <span>{{ bet.user ? bet.user.email : '-' }}</span>
             <span>{{ bet.betType }}</span>
             <span>{{ bet.betValue }}</span>
@@ -36,13 +134,23 @@
           <div class="admin-empty">Brak zakładów.</div>
         {% endfor %}
       </div>
+      <div class="admin-pagination">
+        <span>Strona {{ pagination.page }} z {{ pagination.totalPages }}</span>
+        <div class="admin-actions">
+          <a class="btn ghost {% if pagination.page <= 1 %}muted{% endif %}" href="{{ path('admin_history', query|merge({ page: pagination.page - 1, type: 'roulette' })) }}">Wstecz</a>
+          <a class="btn ghost {% if pagination.page >= pagination.totalPages %}muted{% endif %}" href="{{ path('admin_history', query|merge({ page: pagination.page + 1, type: 'roulette' })) }}">Dalej</a>
+        </div>
+      </div>
     </section>
 
+    {% else %}
     <section class="admin-section">
-      <h2>Blackjack</h2>
+      <div class="admin-section-header">
+        <h2>Blackjack</h2>
+        <span>Wyniki: {{ pagination.total }}</span>
+      </div>
       <div class="admin-table">
         <div class="admin-table-row admin-table-head">
-          <span>ID</span>
           <span>Użytkownik</span>
           <span>Zakład</span>
           <span>Status</span>
@@ -53,7 +161,6 @@
         </div>
         {% for hand in blackjackHands %}
           <div class="admin-table-row">
-            <span>#{{ hand.id }}</span>
             <span>{{ hand.user ? hand.user.email : '-' }}</span>
             <span>{{ hand.betAmount }}</span>
             <span>{{ hand.status }}</span>
@@ -66,6 +173,14 @@
           <div class="admin-empty">Brak gier blackjack.</div>
         {% endfor %}
       </div>
+      <div class="admin-pagination">
+        <span>Strona {{ pagination.page }} z {{ pagination.totalPages }}</span>
+        <div class="admin-actions">
+          <a class="btn ghost {% if pagination.page <= 1 %}muted{% endif %}" href="{{ path('admin_history', query|merge({ page: pagination.page - 1, type: 'blackjack' })) }}">Wstecz</a>
+          <a class="btn ghost {% if pagination.page >= pagination.totalPages %}muted{% endif %}" href="{{ path('admin_history', query|merge({ page: pagination.page + 1, type: 'blackjack' })) }}">Dalej</a>
+        </div>
+      </div>
     </section>
+    {% endif %}
   </div>
 {% endblock %}

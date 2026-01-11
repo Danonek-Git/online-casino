@@ -16,14 +16,17 @@
           <label class="auth-field">
             <span>Email</span>
             {{ form_widget(registrationForm.email, { attr: { class: 'auth-input', autocomplete: 'email' } }) }}
+            {{ form_errors(registrationForm.email) }}
           </label>
           <label class="auth-field">
             <span>Hasło</span>
             {{ form_widget(registrationForm.plainPassword, { attr: { class: 'auth-input', autocomplete: 'new-password' } }) }}
+            {{ form_errors(registrationForm.plainPassword) }}
           </label>
           <label class="auth-checkbox">
             {{ form_widget(registrationForm.agreeTerms) }}
             Akceptuję regulamin
+            {{ form_errors(registrationForm.agreeTerms) }}
           </label>
 
           <button type="submit" class="btn primary">Zarejestruj</button>

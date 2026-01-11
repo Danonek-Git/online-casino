@@ -97,26 +97,67 @@ final class AdminController extends AbstractController
     }
 
     #[Route('/history', name: 'history', methods: ['GET'])]
-    public function history(BetRepository $betRepository, BlackjackHandRepository $blackjackHandRepository): Response
+    public function history(Request $request, BetRepository $betRepository, BlackjackHandRepository $blackjackHandRepository): Response
     {
-        $bets = $betRepository->createQueryBuilder('bet')
-            ->leftJoin('bet.user', 'user')
-            ->leftJoin('bet.round', 'round')
-            ->addSelect('user', 'round')
-            ->orderBy('bet.placedAt', 'DESC')
-            ->setMaxResults(200)
-            ->getQuery()
-            ->getResult();
+        $type = (string) $request->query->get('type', 'roulette');
+        if (!in_array($type, ['roulette', 'blackjack'], true)) {
+            $type = 'roulette';
+        }
 
-        $blackjackHands = $blackjackHandRepository->createQueryBuilder('hand')
-            ->leftJoin('hand.user', 'user')
-            ->addSelect('user')
-            ->orderBy('hand.createdAt', 'DESC')
-            ->setMaxResults(200)
-            ->getQuery()
-            ->getResult();
+        $limit = 100;
+        $page = max(1, (int) $request->query->get('page', 1));
+        $sort = $this->normalizeSort((string) $request->query->get('sort', 'desc'));
+
+        $bets = [];
+        $blackjackHands = [];
+        $filters = [];
+        $pagination = [
+            'page' => 1,
+            'totalPages' => 1,
+            'total' => 0,
+            'limit' => $limit,
+        ];
+
+        if ($type === 'roulette') {
+            $filters = [
+                'user' => (string) $request->query->get('user', ''),
+                'betColor' => (string) $request->query->get('betColor', ''),
+                'betNumber' => (string) $request->query->get('betNumber', ''),
+                'isWin' => (string) $request->query->get('isWin', ''),
+                'roundId' => (string) $request->query->get('roundId', ''),
+                'sort' => strtolower($sort),
+            ];
+
+            $total = $betRepository->countForAdminHistory($filters);
+            $pagination = $this->buildPagination($total, $limit, $page);
+            $bets = $betRepository->findForAdminHistory(
+                $filters,
+                $limit,
+                $pagination['offset'],
+                $sort
+            );
+        } else {
+            $filters = [
+                'user' => (string) $request->query->get('user', ''),
+                'result' => (string) $request->query->get('result', ''),
+                'status' => (string) $request->query->get('status', ''),
+                'sort' => strtolower($sort),
+            ];
+
+            $total = $blackjackHandRepository->countForAdminHistory($filters);
+            $pagination = $this->buildPagination($total, $limit, $page);
+            $blackjackHands = $blackjackHandRepository->findForAdminHistory(
+                $filters,
+                $limit,
+                $pagination['offset'],
+                $sort
+            );
+        }
 
         return $this->render('admin/history.html.twig', [
+            'type' => $type,
+            'filters' => $filters,
+            'pagination' => $pagination,
             'bets' => $bets,
             'blackjackHands' => $blackjackHands,
         ]);
@@ -146,5 +187,27 @@ final class AdminController extends AbstractController
             'losses' => $losses,
             'balance' => $balance,
         ]);
+    }
+
+    private function normalizeSort(string $sort): string
+    {
+        return strtolower($sort) === 'asc' ? 'ASC' : 'DESC';
+    }
+
+    /**
+     * @return array{page:int,totalPages:int,total:int,limit:int,offset:int}
+     */
+    private function buildPagination(int $total, int $limit, int $page): array
+    {
+        $totalPages = max(1, (int) ceil($total / $limit));
+        $page = max(1, min($page, $totalPages));
+
+        return [
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'total' => $total,
+            'limit' => $limit,
+            'offset' => ($page - 1) * $limit,
+        ];
     }
 }

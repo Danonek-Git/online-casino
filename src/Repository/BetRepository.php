@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Bet;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\QueryBuilder;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -34,6 +35,74 @@ class BetRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
 
         return (int) $result;
+    }
+
+    /**
+     * @return Bet[]
+     */
+    public function findForAdminHistory(array $filters, int $limit, int $offset, string $sort): array
+    {
+        $qb = $this->createQueryBuilder('bet')
+            ->leftJoin('bet.user', 'user')
+            ->leftJoin('bet.round', 'round')
+            ->addSelect('user', 'round');
+
+        $this->applyAdminFilters($qb, $filters);
+
+        return $qb
+            ->orderBy('bet.placedAt', $sort)
+            ->addOrderBy('bet.id', $sort)
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countForAdminHistory(array $filters): int
+    {
+        $qb = $this->createQueryBuilder('bet')
+            ->select('COUNT(bet.id)')
+            ->leftJoin('bet.user', 'user')
+            ->leftJoin('bet.round', 'round');
+
+        $this->applyAdminFilters($qb, $filters);
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    private function applyAdminFilters(QueryBuilder $qb, array $filters): void
+    {
+        $user = trim((string) ($filters['user'] ?? ''));
+        if ($user !== '') {
+            $qb->andWhere('LOWER(user.email) LIKE :user')
+                ->setParameter('user', '%' . mb_strtolower($user) . '%');
+        }
+
+        $betNumber = trim((string) ($filters['betNumber'] ?? ''));
+        $betColor = strtolower(trim((string) ($filters['betColor'] ?? '')));
+        if ($betNumber !== '' && ctype_digit($betNumber)) {
+            $qb->andWhere('bet.betType = :betTypeNumber')
+                ->andWhere('bet.betValue = :betNumber')
+                ->setParameter('betTypeNumber', 'number')
+                ->setParameter('betNumber', $betNumber);
+        } elseif ($betColor !== '' && in_array($betColor, ['red', 'black'], true)) {
+            $qb->andWhere('bet.betType = :betTypeColor')
+                ->andWhere('bet.betValue = :betColor')
+                ->setParameter('betTypeColor', 'color')
+                ->setParameter('betColor', $betColor);
+        }
+
+        $isWin = (string) ($filters['isWin'] ?? '');
+        if ($isWin === 'yes') {
+            $qb->andWhere('bet.isWin = :isWin')->setParameter('isWin', true);
+        } elseif ($isWin === 'no') {
+            $qb->andWhere('bet.isWin = :isWin')->setParameter('isWin', false);
+        }
+
+        $roundId = trim((string) ($filters['roundId'] ?? ''));
+        if ($roundId !== '' && ctype_digit($roundId)) {
+            $qb->andWhere('round.id = :roundId')->setParameter('roundId', (int) $roundId);
+        }
     }
 
     /**
