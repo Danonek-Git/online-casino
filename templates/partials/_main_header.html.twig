@@ -7,6 +7,7 @@
     <a class="btn ghost" href="{{ path('app_home') }}">Strona główna</a>
     <a class="btn ghost" href="{{ path('roulette_index') }}">Ruletka</a>
     <a class="btn ghost" href="{{ path('blackjack_index') }}">Blackjack</a>
+    <a class="btn ghost" href="{{ path('articles_index') }}">Artykuły</a>
     {% if app.user %}
       <a class="btn ghost" href="{{ path('app_profile') }}">Profil</a>
       {% if is_granted('ROLE_ADMIN') %}

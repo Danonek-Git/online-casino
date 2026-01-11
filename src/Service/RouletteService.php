@@ -14,6 +14,10 @@ final class RouletteService
 {
     private const ROUND_DURATION_SECONDS = 30;
     private const ROUND_RESULT_PAUSE_SECONDS = 15;
+    private const MIN_BET_AMOUNT = 1;
+    private const MAX_BET_AMOUNT = 5000;
+    private const MAX_BETS_PER_ROUND = 10;
+    private const DUPLICATE_BET_WINDOW_SECONDS = 3;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -47,9 +51,17 @@ final class RouletteService
 
     public function placeBet(User $user, RouletteRound $round, string $betType, string $betValue, int $amount): Bet
     {
+        if ($user->isBlocked()) {
+            throw new \RuntimeException('Konto jest zablokowane.');
+        }
+
         $wallet = $user->getWallet();
         if ($wallet === null) {
             throw new \RuntimeException('Nie znaleziono portfela.');
+        }
+
+        if ($amount < self::MIN_BET_AMOUNT || $amount > self::MAX_BET_AMOUNT) {
+            throw new \InvalidArgumentException('Kwota zakładu jest poza dozwolonym zakresem.');
         }
 
         if ($amount <= 0) {
@@ -60,12 +72,50 @@ final class RouletteService
             throw new \RuntimeException('Brak wystarczających środków na koncie.');
         }
 
-        if ($round->getStatus() !== RouletteRound::STATUS_OPEN || $round->getEndsAt() <= new \DateTimeImmutable()) {
+        $now = new \DateTimeImmutable();
+        if ($round->getStatus() !== RouletteRound::STATUS_OPEN || $round->getEndsAt() <= $now) {
             throw new \RuntimeException('Zakłady dla tej rundy zostały zamknięte.');
         }
 
         $betType = strtolower(trim($betType));
         $betValue = strtolower(trim($betValue));
+        if (!in_array($betType, ['number', 'color', 'even'], true)) {
+            throw new \InvalidArgumentException('Nieznany typ zakładu.');
+        }
+        if ($betType === 'number') {
+            if (!ctype_digit($betValue)) {
+                throw new \InvalidArgumentException('Dla typu "number" podaj liczbę 1–36.');
+            }
+            $number = (int) $betValue;
+            if ($number < 1 || $number > 36) {
+                throw new \InvalidArgumentException('Numer musi być w zakresie 1–36.');
+            }
+        }
+        if ($betType === 'color' && !in_array($betValue, ['red', 'black'], true)) {
+            throw new \InvalidArgumentException('Dla typu "color" wpisz: red lub black.');
+        }
+        if ($betType === 'even' && !in_array($betValue, ['even', 'odd'], true)) {
+            throw new \InvalidArgumentException('Dla typu "even" wpisz: even lub odd.');
+        }
+
+        $betsInRound = 0;
+        foreach ($round->getBets() as $existingBet) {
+            if ($existingBet->getUser() !== $user) {
+                continue;
+            }
+
+            $betsInRound++;
+            if ($betsInRound >= self::MAX_BETS_PER_ROUND) {
+                throw new \RuntimeException('Osiągnięto limit zakładów w tej rundzie.');
+            }
+
+            if ($existingBet->getBetType() === $betType && $existingBet->getBetValue() === $betValue) {
+                $placedAt = $existingBet->getPlacedAt();
+                if ($placedAt !== null && $placedAt->getTimestamp() >= $now->getTimestamp() - self::DUPLICATE_BET_WINDOW_SECONDS) {
+                    throw new \RuntimeException('Zbyt szybkie powtórzenie identycznego zakładu.');
+                }
+            }
+        }
 
         $bet = new Bet();
         $bet->setBetType($betType);
@@ -140,8 +190,6 @@ final class RouletteService
         $color = in_array($number, $redNumbers, true) ? 'red' : 'black';
         return [$number, $color];
     }
-
-
     /**
      * @return array{0:bool,1:int} [isWin, payout]
      */

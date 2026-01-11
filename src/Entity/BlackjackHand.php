@@ -6,6 +6,7 @@ namespace App\Entity;
 
 use App\Repository\BlackjackHandRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: BlackjackHandRepository::class)]
 class BlackjackHand
@@ -35,6 +36,7 @@ class BlackjackHand
     #[ORM\Column]
     private array $dealerCards = [];
 
+    #[Assert\Positive]
     #[ORM\Column]
     private int $betAmount = 0;
 

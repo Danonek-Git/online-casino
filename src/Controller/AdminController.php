@@ -8,8 +8,8 @@ use App\Entity\Wallet;
 use App\Repository\ArticleRepository;
 use App\Repository\BetRepository;
 use App\Repository\GameSessionRepository;
+use App\Repository\RouletteRoundRepository;
 use App\Repository\UserRepository;
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -130,11 +130,11 @@ final class AdminController extends AbstractController
     }
 
     #[Route('/stats', name: 'stats', methods: ['GET'])]
-    public function stats(Connection $connection): Response
+    public function stats(BetRepository $betRepository, RouletteRoundRepository $roundRepository): Response
     {
-        $games = (int) $connection->fetchOne('SELECT COUNT(*) FROM roulette_round');
-        $totalBets = (int) $connection->fetchOne('SELECT COALESCE(SUM(amount), 0) FROM bet');
-        $totalPayouts = (int) $connection->fetchOne('SELECT COALESCE(SUM(payout), 0) FROM bet');
+        $games = $roundRepository->countAllRounds();
+        $totalBets = $betRepository->sumBetAmounts();
+        $totalPayouts = $betRepository->sumPayouts();
         $losses = $totalBets - $totalPayouts;
         $balance = $totalPayouts - $totalBets;
 

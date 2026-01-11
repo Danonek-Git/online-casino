@@ -5,6 +5,8 @@ namespace App\Entity;
 use App\Repository\BetRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Constraints\Callback;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: BetRepository::class)]
 class Bet
@@ -162,5 +164,48 @@ class Bet
         $this->user = $user;
 
         return $this;
+    }
+
+    #[Callback]
+    public function validateBetValues(ExecutionContextInterface $context): void
+    {
+        $type = strtolower(trim((string) $this->betType));
+        $value = strtolower(trim((string) $this->betValue));
+
+        if (!in_array($type, ['number', 'color', 'even'], true)) {
+            $context->buildViolation('Invalid bet type.')
+                ->atPath('betType')
+                ->addViolation();
+            return;
+        }
+
+        if ($type === 'number') {
+            if (!ctype_digit($value)) {
+                $context->buildViolation('Bet value must be a number between 1 and 36.')
+                    ->atPath('betValue')
+                    ->addViolation();
+                return;
+            }
+            $number = (int) $value;
+            if ($number < 1 || $number > 36) {
+                $context->buildViolation('Bet value must be a number between 1 and 36.')
+                    ->atPath('betValue')
+                    ->addViolation();
+            }
+            return;
+        }
+
+        if ($type === 'color' && !in_array($value, ['red', 'black'], true)) {
+            $context->buildViolation('Color bet value must be red or black.')
+                ->atPath('betValue')
+                ->addViolation();
+            return;
+        }
+
+        if ($type === 'even' && !in_array($value, ['even', 'odd'], true)) {
+            $context->buildViolation('Even bet value must be even or odd.')
+                ->atPath('betValue')
+                ->addViolation();
+        }
     }
 }

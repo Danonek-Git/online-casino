@@ -12,137 +12,221 @@
     data-round-color="{{ round.resultColor ?? '' }}"
     data-server-time="{{ serverTime|date('c') }}"
     data-state-url="{{ path('roulette_state') }}"
+    data-chat-post-url="{{ path('roulette_chat_send') }}"
   >
     {% include 'partials/_main_header.html.twig' %}
 
-    <header class="roulette-header">
-      <div>
-        <h1>Ruletka</h1>
-        <p>Odliczanie 30s, wspólne rundy, losowanie na żywo.</p>
-      </div>
-      <div class="balance-card">
-        <span>Saldo</span>
-        <strong>
-          {% if app.user and app.user.wallet %}
-            {{ app.user.wallet.balance }}
-          {% else %}
-            -
-          {% endif %}
-        </strong>
-      </div>
-    </header>
-
-    {% for label, messages in app.flashes %}
-      {% for message in messages %}
-        <div class="flash flash-{{ label }} flash-popup">{{ message }}</div>
-      {% endfor %}
-    {% endfor %}
-
-    <section class="roulette-wheel">
-      <div class="wheel-viewport">
-        <div class="wheel-track" data-wheel-track>
-          {% for i in 0..2 %}
-            {% for number in wheelNumbers %}
-              {% set color = 'black' %}
-              {% if number == 0 %}
-                {% set color = 'green' %}
-              {% elseif number in redNumbers %}
-                {% set color = 'red' %}
-              {% endif %}
-              <div class="wheel-tile {{ color }}" data-number="{{ number }}">
-                {{ number }}
-              </div>
-            {% endfor %}
-          {% endfor %}
-        </div>
-        <div class="wheel-pointer"></div>
-      </div>
-      <div class="wheel-status">
-        <span class="status-text" data-status-text>Runda trwa</span>
-        <span class="status-timer" data-timer>00:30</span>
-      </div>
-    </section>
-
-    <section class="roulette-history">
-      <h2>Ostatnie losowania</h2>
-      <div class="history-list" data-history>
-        {% if lastRounds is empty %}
-          <span class="history-empty">Brak wyników.</span>
-        {% else %}
-          {% for item in lastRounds|reverse %}
-            <span class="history-item {{ item.resultColor }}{% if loop.last %} is-latest{% endif %}">{{ item.resultNumber }}</span>
-          {% endfor %}
-        {% endif %}
-      </div>
-    </section>
-
-    <section class="bet-panel">
-      {{ form_start(form, { action: path('roulette_bet'), method: 'POST', attr: { class: 'bet-form bet-layout' } }) }}
-        <div class="bet-main">
-          {{ form_widget(form.betType, { attr: { 'data-bet-type-input': '' } }) }}
-          {{ form_widget(form.betValue, { attr: { 'data-bet-value-input': '' } }) }}
-
-          <div class="bet-controls">
-            <div class="amount-group">
-              <label>Stawka</label>
-              {{ form_widget(form.amount, { attr: { class: 'amount-input', 'data-amount-input': '' } }) }}
-            </div>
-            <div class="quick-actions">
-              <button type="button" class="chip ghost" data-amount-clear>Clear</button>
-              <button type="button" class="chip" data-amount-add="10">+10</button>
-              <button type="button" class="chip" data-amount-add="100">+100</button>
-              <button type="button" class="chip" data-amount-add="1000">+1000</button>
-              <button type="button" class="chip" data-amount-mul="0.5">/2</button>
-              <button type="button" class="chip" data-amount-mul="2">x2</button>
-              <button type="button" class="chip ghost" data-amount-max>Max</button>
-            </div>
-            <button type="submit" class="place-bet" {% if not app.user %}disabled{% endif %}>Postaw zakład</button>
+    <div class="roulette-shell">
+      <main class="roulette-main">
+        <header class="roulette-header">
+          <div>
+            <h1>Ruletka</h1>
+            <p>Odliczanie 30s, wspólne rundy, losowanie na żywo.</p>
           </div>
-
-          <div class="bet-targets">
-            <div class="bet-section">
-              <h3>Kolory</h3>
-              <div class="color-grid">
-                <button type="button" class="color-btn red" data-bet-type="color" data-bet-value="red">Czerwony</button>
-                <button type="button" class="color-btn black" data-bet-type="color" data-bet-value="black">Czarny</button>
-              </div>
+          <div class="roulette-header-actions">
+            <div class="balance-card">
+              <span>Saldo</span>
+              <strong>
+                {% if app.user and app.user.wallet %}
+                  {{ app.user.wallet.balance }}
+                {% else %}
+                  -
+                {% endif %}
+              </strong>
             </div>
+            <button type="button" class="aside-toggle" data-aside-toggle>
+              Panel boczny
+            </button>
+          </div>
+        </header>
 
-            <div class="bet-section">
-              <h3>Numery</h3>
-              <div class="number-grid">
-                {% for number in 1..36 %}
+        {% for label, messages in app.flashes %}
+          {% for message in messages %}
+            <div class="flash flash-{{ label }} flash-popup">{{ message }}</div>
+          {% endfor %}
+        {% endfor %}
+
+        <section class="roulette-wheel">
+          <div class="wheel-viewport">
+            <div class="wheel-track" data-wheel-track>
+              {% for i in 0..2 %}
+                {% for number in wheelNumbers %}
                   {% set color = 'black' %}
                   {% if number == 0 %}
                     {% set color = 'green' %}
                   {% elseif number in redNumbers %}
                     {% set color = 'red' %}
                   {% endif %}
-                  <button type="button" class="number-btn {{ color }}" data-bet-type="number" data-bet-value="{{ number }}">
+                  <div class="wheel-tile {{ color }}" data-number="{{ number }}">
                     {{ number }}
-                  </button>
+                  </div>
                 {% endfor %}
+              {% endfor %}
+            </div>
+            <div class="wheel-pointer"></div>
+          </div>
+          <div class="wheel-status">
+            <span class="status-text" data-status-text>Runda trwa</span>
+            <span class="status-timer" data-timer>00:30</span>
+          </div>
+        </section>
+
+        <section class="roulette-history">
+          <h2>Ostatnie losowania</h2>
+          <div class="history-list" data-history>
+            {% if lastRounds is empty %}
+              <span class="history-empty">Brak wyników.</span>
+            {% else %}
+              {% for item in lastRounds|reverse %}
+                <span class="history-item {{ item.resultColor }}{% if loop.last %} is-latest{% endif %}">{{ item.resultNumber }}</span>
+              {% endfor %}
+            {% endif %}
+          </div>
+        </section>
+
+        <section class="bet-panel">
+          {{ form_start(form, { action: path('roulette_bet'), method: 'POST', attr: { class: 'bet-form bet-layout' } }) }}
+            <div class="bet-main">
+              {{ form_widget(form.betType, { attr: { 'data-bet-type-input': '' } }) }}
+              {{ form_widget(form.betValue, { attr: { 'data-bet-value-input': '' } }) }}
+
+              <div class="bet-controls">
+                <div class="amount-group">
+                  <label>Stawka</label>
+                  {{ form_widget(form.amount, { attr: { class: 'amount-input', 'data-amount-input': '' } }) }}
+                </div>
+                <div class="quick-actions">
+                  <button type="button" class="chip ghost" data-amount-clear>Clear</button>
+                  <button type="button" class="chip" data-amount-add="10">+10</button>
+                  <button type="button" class="chip" data-amount-add="100">+100</button>
+                  <button type="button" class="chip" data-amount-add="1000">+1000</button>
+                  <button type="button" class="chip" data-amount-mul="0.5">/2</button>
+                  <button type="button" class="chip" data-amount-mul="2">x2</button>
+                  <button type="button" class="chip ghost" data-amount-max>Max</button>
+                </div>
+                <button type="submit" class="place-bet" {% if not app.user %}disabled{% endif %}>Postaw zakład</button>
+              </div>
+
+              <div class="bet-targets">
+                <div class="bet-section">
+                  <h3>Kolory</h3>
+                  <div class="color-grid">
+                    <button type="button" class="color-btn red" data-bet-type="color" data-bet-value="red">Czerwony</button>
+                    <button type="button" class="color-btn black" data-bet-type="color" data-bet-value="black">Czarny</button>
+                  </div>
+                </div>
+
+                <div class="bet-section">
+                  <h3>Numery</h3>
+                  <div class="number-grid">
+                    {% for number in 1..36 %}
+                      {% set color = 'black' %}
+                      {% if number == 0 %}
+                        {% set color = 'green' %}
+                      {% elseif number in redNumbers %}
+                        {% set color = 'red' %}
+                      {% endif %}
+                      <button type="button" class="number-btn {{ color }}" data-bet-type="number" data-bet-value="{{ number }}">
+                        {{ number }}
+                      </button>
+                    {% endfor %}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+
+            <aside class="bet-summary">
+              <span>Wybrany zakład</span>
+              <strong data-selected-bet>Brak</strong>
+              <span class="bet-amount-preview">Stawka: wpisz z lewej</span>
+
+              <div class="bet-separator"></div>
+
+              <span class="bet-round-label">Zakład w tej rundzie</span>
+              <strong data-round-bet>Brak</strong>
+
+              {% if not app.user %}
+                <p class="bet-note">Zaloguj się, aby obstawiać.</p>
+              {% endif %}
+            </aside>
+
+          {{ form_end(form) }}
+        </section>
+      </main>
+
+      <aside class="roulette-aside" data-roulette-aside>
+        <div class="leaderboard-panel">
+          <header>
+            <h2>Największe wygrane</h2>
+            <span data-leaderboard-round>
+              {% if leaderboard.roundId %}
+                Runda #{{ leaderboard.roundId }}
+              {% else %}
+                Brak rundy
+              {% endif %}
+            </span>
+          </header>
+          <ol class="leaderboard-list" data-leaderboard-winners>
+            {% if leaderboard.winners is empty %}
+              <li class="leaderboard-empty">Brak danych.</li>
+            {% else %}
+              {% for entry in leaderboard.winners %}
+                <li>
+                  <span class="leaderboard-user">{{ entry.user }}</span>
+                  <strong>+{{ entry.amount }} zł</strong>
+                </li>
+              {% endfor %}
+            {% endif %}
+          </ol>
         </div>
 
-        <aside class="bet-summary">
-          <span>Wybrany zakład</span>
-          <strong data-selected-bet>Brak</strong>
-          <span class="bet-amount-preview">Stawka: wpisz z lewej</span>
+        <div class="leaderboard-panel">
+          <header>
+            <h2>Największe przegrane</h2>
+            <span class="leaderboard-sub">Poprzednia runda</span>
+          </header>
+          <ol class="leaderboard-list" data-leaderboard-losers>
+            {% if leaderboard.losers is empty %}
+              <li class="leaderboard-empty">Brak danych.</li>
+            {% else %}
+              {% for entry in leaderboard.losers %}
+                <li>
+                  <span class="leaderboard-user">{{ entry.user }}</span>
+                  <strong>-{{ entry.amount }} zł</strong>
+                </li>
+              {% endfor %}
+            {% endif %}
+          </ol>
+        </div>
 
-          <div class="bet-separator"></div>
-
-          <span class="bet-round-label">Zakład w tej rundzie</span>
-          <strong data-round-bet>Brak</strong>
-
-          {% if not app.user %}
-            <p class="bet-note">Zaloguj się, aby obstawiać.</p>
-          {% endif %}
-        </aside>
-
-      {{ form_end(form) }}
-    </section>
+        <div class="chat-panel">
+          <header>
+            <h2>Chat ruletki</h2>
+            <span class="leaderboard-sub">Na żywo, bez historii</span>
+          </header>
+          <div class="chat-messages" data-chat-messages>
+            {% if chatMessages is empty %}
+              <div class="chat-empty">Brak wiadomości.</div>
+            {% else %}
+              {% for message in chatMessages|reverse %}
+                <div class="chat-message">
+                  <span class="chat-meta">{{ message.time }} · {{ message.user }}</span>
+                  <p>{{ message.text }}</p>
+                </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+          <form class="chat-form" data-chat-form>
+            <input type="text" name="message" placeholder="Napisz coś..." maxlength="125" data-chat-input {% if not app.user %}disabled{% endif %}>
+            <button type="submit" {% if not app.user %}disabled{% endif %}>Wyślij</button>
+          </form>
+          <span class="chat-status" data-chat-status>
+            {% if not app.user %}
+              Zaloguj się, aby pisać.
+            {% endif %}
+          </span>
+        </div>
+      </aside>
+    </div>
   </div>
 {% endblock %}

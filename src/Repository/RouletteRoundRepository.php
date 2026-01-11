@@ -47,4 +47,12 @@ class RouletteRoundRepository extends ServiceEntityRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    public function countAllRounds(): int
+    {
+        return (int) $this->createQueryBuilder('round')
+            ->select('COUNT(round.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

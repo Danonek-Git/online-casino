@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }}{% endblock %}
+
+{% block body %}
+  <div class="page article-page">
+    {% include 'partials/_main_header.html.twig' %}
+
+    <article class="article-content">
+      <header class="article-header">
+        <h1>{{ article.title }}</h1>
+        <p class="article-subtitle">{{ article.subtitle }}</p>
+      </header>
+      <img class="article-hero" src="{{ asset(article.image) }}" alt="{{ article.title }}">
+
+      <p>Kasyno to stan umysłu. Jeśli zamkniesz oczy, usłyszysz szum automatów i poczujesz, jak fortuna szepcze: “spokojnie, mam cię”. To nie jest uzależnienie, to konsekwencja w praktykowaniu przeznaczenia.</p>
+      <p>Legenda głosi, że gdy ktoś wypowiada afirmacje “jestem jackpotem”, ruletka sama przestawia się na czerwone (Nie czarne, bo kradnie). Naukowo udowodnione przez Instytut Wróżek i Chmur Dymu.</p>
+      <p>Jeśli portfel zaczyna się kurczyć, to znak, że materialny świat próbuje cię rozproszyć. Właściwy gracz zamienia bilans na wiarę, bo wiara nie potrzebuje PIN‑u.</p>
+
+      <div class="article-actions">
+        <a class="btn primary" href="{{ path('roulette_index') }}">Zakręć swoim losem</a>
+        <a class="btn ghost" href="{{ path('blackjack_index') }}">Weź los w swoje ręce</a>
+      </div>
+    </article>
+  </div>
+{% endblock %}

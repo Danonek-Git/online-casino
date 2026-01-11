@@ -14,6 +14,8 @@ final class BlackjackService
 {
     private const SUITS = ['H', 'D', 'C', 'S'];
     private const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+    private const MIN_BET_AMOUNT = 1;
+    private const MAX_BET_AMOUNT = 5000;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -36,6 +38,10 @@ final class BlackjackService
 
     public function startNewHand(User $user, int $betAmount): BlackjackHand
     {
+        if ($user->isBlocked()) {
+            throw new \RuntimeException('Konto jest zablokowane.');
+        }
+
         $existingHand = $this->getActiveHand($user);
         if ($existingHand !== null) {
             throw new \RuntimeException('Masz już rozdane karty.');
@@ -48,6 +54,9 @@ final class BlackjackService
 
         if ($betAmount <= 0) {
             throw new \InvalidArgumentException('Zakład musi być większy niż 0.');
+        }
+        if ($betAmount < self::MIN_BET_AMOUNT || $betAmount > self::MAX_BET_AMOUNT) {
+            throw new \InvalidArgumentException('Kwota zakładu jest poza dozwolonym zakresem.');
         }
 
         if ($wallet->getBalance() < $betAmount) {
@@ -82,6 +91,10 @@ final class BlackjackService
 
     public function hit(BlackjackHand $hand): BlackjackHand
     {
+        if ($hand->getUser()?->isBlocked()) {
+            throw new \RuntimeException('Konto jest zablokowane.');
+        }
+
         if ($hand->getStatus() !== BlackjackHand::STATUS_PLAYING) {
             throw new \RuntimeException('Nie można dobrać, gra nie jest aktywna.');
         }
@@ -121,6 +134,10 @@ final class BlackjackService
 
     public function stand(BlackjackHand $hand): BlackjackHand
     {
+        if ($hand->getUser()?->isBlocked()) {
+            throw new \RuntimeException('Konto jest zablokowane.');
+        }
+
         if ($hand->getStatus() !== BlackjackHand::STATUS_PLAYING) {
             throw new \RuntimeException('Nie można dobrać, gra nie jest aktywna.');
         }

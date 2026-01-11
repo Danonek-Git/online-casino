@@ -24,6 +24,31 @@ const initRoulette = () => {
     const roundBetEl = roulettePage.querySelector('[data-round-bet]');
     const betForm = roulettePage.querySelector('.bet-form');
     const placeBetBtn = roulettePage.querySelector('.place-bet');
+    const leaderboardWinnersEl = roulettePage.querySelector('[data-leaderboard-winners]');
+    const leaderboardLosersEl = roulettePage.querySelector('[data-leaderboard-losers]');
+    const leaderboardRoundEl = roulettePage.querySelector('[data-leaderboard-round]');
+    const chatMessagesEl = roulettePage.querySelector('[data-chat-messages]');
+    const chatForm = roulettePage.querySelector('[data-chat-form]');
+    const chatInput = roulettePage.querySelector('[data-chat-input]');
+    const chatStatus = roulettePage.querySelector('[data-chat-status]');
+    const chatPostUrl = roulettePage.dataset.chatPostUrl;
+    const chatSubmitBtn = chatForm ? chatForm.querySelector('button') : null;
+    const asideToggle = roulettePage.querySelector('[data-aside-toggle]');
+    const asideEl = roulettePage.querySelector('[data-roulette-aside]');
+
+    if (asideToggle && asideEl) {
+        const applyAsideState = (collapsed) => {
+            roulettePage.classList.toggle('is-aside-collapsed', collapsed);
+            asideToggle.textContent = collapsed ? 'Pokaż panel' : 'Ukryj panel';
+        };
+        const saved = sessionStorage.getItem('roulette.aside.collapsed') === '1';
+        applyAsideState(saved);
+        asideToggle.addEventListener('click', () => {
+            const next = !roulettePage.classList.contains('is-aside-collapsed');
+            sessionStorage.setItem('roulette.aside.collapsed', next ? '1' : '0');
+            applyAsideState(next);
+        });
+    }
 
     let serverOffsetMs = 0;
     let currentRoundId = roulettePage.dataset.roundId;
@@ -42,6 +67,7 @@ const initRoulette = () => {
     let holdUntil = 0;
     let queuedRound = null;
     let pendingBalance = null;
+    let pendingLeaderboard = null;
     const balanceEl = roulettePage.querySelector('.balance-card strong');
 
     const normalizeResult = (value) => (value === null || value === undefined ? '' : String(value));
@@ -454,6 +480,85 @@ const initRoulette = () => {
         });
     };
 
+    const renderLeaderboard = (items, target, emptyText, prefix) => {
+        if (!target) {
+            return;
+        }
+        target.innerHTML = '';
+        if (!items.length) {
+            const empty = document.createElement('li');
+            empty.className = 'leaderboard-empty';
+            empty.textContent = emptyText;
+            target.appendChild(empty);
+            return;
+        }
+        const fragment = document.createDocumentFragment();
+        items.forEach((entry) => {
+            const row = document.createElement('li');
+            const name = document.createElement('span');
+            name.className = 'leaderboard-user';
+            name.textContent = entry.user;
+            const amount = document.createElement('strong');
+            amount.textContent = `${prefix}${entry.amount} zł`;
+            row.appendChild(name);
+            row.appendChild(amount);
+            fragment.appendChild(row);
+        });
+        target.appendChild(fragment);
+    };
+
+    const applyLeaderboard = (leaderboard) => {
+        if (!leaderboard) {
+            return;
+        }
+        const winners = Array.isArray(leaderboard.winners) ? leaderboard.winners : [];
+        const losers = Array.isArray(leaderboard.losers) ? leaderboard.losers : [];
+        renderLeaderboard(winners, leaderboardWinnersEl, 'Brak danych.', '+');
+        renderLeaderboard(losers, leaderboardLosersEl, 'Brak danych.', '-');
+        if (leaderboardRoundEl) {
+            leaderboardRoundEl.textContent = leaderboard.roundId
+                ? `Runda #${leaderboard.roundId}`
+                : 'Brak rundy';
+        }
+    };
+
+    const renderChat = (messages) => {
+        if (!chatMessagesEl) {
+            return;
+        }
+        chatMessagesEl.innerHTML = '';
+        if (!messages.length) {
+            const empty = document.createElement('div');
+            empty.className = 'chat-empty';
+            empty.textContent = 'Brak wiadomości.';
+            chatMessagesEl.appendChild(empty);
+            return;
+        }
+        const fragment = document.createDocumentFragment();
+        messages.slice().reverse().forEach((message) => {
+            const row = document.createElement('div');
+            row.className = 'chat-message';
+            const meta = document.createElement('span');
+            meta.className = 'chat-meta';
+            meta.textContent = `${message.time} · ${message.user}`;
+            const text = document.createElement('p');
+            text.textContent = message.text;
+            row.appendChild(meta);
+            row.appendChild(text);
+            fragment.appendChild(row);
+        });
+        chatMessagesEl.appendChild(fragment);
+    };
+
+    const updateChatStatus = (text, isError = false) => {
+        if (!chatStatus) {
+            return;
+        }
+        chatStatus.textContent = text;
+        chatStatus.classList.toggle('is-error', isError);
+    };
+
+
     const refreshState = async () => {
         if (!stateUrl) {
             return;
@@ -475,17 +580,17 @@ const initRoulette = () => {
                     queuedRound = data.round;
                 } else {
                     queuedRound = null;
-                    if (nextRoundId !== currentRoundId) {
-                        currentRoundId = nextRoundId;
-                        currentResult = '';
-                        pendingResult = '';
-                        revealAtMs = null;
-                        isSettling = false;
-                        settleEndsAt = 0;
-                        holdUntil = 0;
-                        pendingBalance = null;
-                        loadRoundBet();
-                    }
+                if (nextRoundId !== currentRoundId) {
+                    currentRoundId = nextRoundId;
+                    currentResult = '';
+                    pendingResult = '';
+                    revealAtMs = null;
+                    isSettling = false;
+                    settleEndsAt = 0;
+                    holdUntil = 0;
+                    pendingBalance = null;
+                    loadRoundBet();
+                }
 
                     currentEndsAt = new Date(data.round.endsAt).getTime();
                     const nextResult = normalizeResult(data.round.resultNumber);
@@ -509,6 +614,20 @@ const initRoulette = () => {
                     balanceEl.textContent = String(data.balance);
                     pendingBalance = null;
                 }
+            }
+            if (data.leaderboard) {
+                const now = Date.now() + serverOffsetMs;
+                if (pendingResult !== '' && revealAtMs !== null && now < revealAtMs) {
+                    pendingLeaderboard = data.leaderboard;
+                } else if (isSettling || now < settleEndsAt) {
+                    pendingLeaderboard = data.leaderboard;
+                } else {
+                    applyLeaderboard(data.leaderboard);
+                    pendingLeaderboard = null;
+                }
+            }
+            if (Array.isArray(data.chat)) {
+                renderChat(data.chat);
             }
         } catch (error) {
             console.warn('Roulette state error', error);
@@ -541,8 +660,50 @@ const initRoulette = () => {
             balanceEl.textContent = String(pendingBalance);
             pendingBalance = null;
         }
+        if (pendingLeaderboard && !isSettling && Date.now() + serverOffsetMs >= settleEndsAt) {
+            applyLeaderboard(pendingLeaderboard);
+            pendingLeaderboard = null;
+        }
         refreshState();
     }, 2000);
+
+    if (chatForm && chatInput && chatSubmitBtn) {
+        chatForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!chatPostUrl) {
+                return;
+            }
+            const message = chatInput.value.trim();
+            if (!message) {
+                updateChatStatus('Wpisz wiadomość.', true);
+                return;
+            }
+            chatSubmitBtn.disabled = true;
+            const payload = new URLSearchParams();
+            payload.set('message', message);
+            try {
+                const response = await fetch(chatPostUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+                    body: payload.toString(),
+                });
+                const data = await response.json();
+                if (!response.ok || !data.ok) {
+                    updateChatStatus(data.error || 'Nie udało się wysłać wiadomości.', true);
+                    return;
+                }
+                chatInput.value = '';
+                updateChatStatus('Wysłano.', false);
+                if (Array.isArray(data.messages)) {
+                    renderChat(data.messages);
+                }
+            } catch (error) {
+                updateChatStatus('Błąd połączenia z czatem.', true);
+            } finally {
+                chatSubmitBtn.disabled = false;
+            }
+        });
+    }
 
     return () => {
         clearInterval(timerInterval);

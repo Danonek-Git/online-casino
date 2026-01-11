@@ -10,7 +10,6 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: GameSessionRepository::class)]
 class GameSession
 {
-    public const TYPE_ROULETTE = 'roulette';
     public const TYPE_BLACKJACK = 'blackjack';
     public const STATUS_OPEN = 'open';
     public const STATUS_FINISHED = 'finished';
@@ -41,9 +40,6 @@ class GameSession
      */
     #[ORM\OneToMany(targetEntity: Bet::class, mappedBy: 'gameSession')]
     private Collection $bets;
-
-    #[ORM\OneToOne(mappedBy: 'gameSession', cascade: ['persist', 'remove'])]
-    private ?RouletteSpin $rouletteSpin = null;
 
     public function __construct()
     {
@@ -146,20 +142,4 @@ class GameSession
         return $this;
     }
 
-    public function getRouletteSpin(): ?RouletteSpin
-    {
-        return $this->rouletteSpin;
-    }
-
-    public function setRouletteSpin(RouletteSpin $rouletteSpin): static
-    {
-        // set the owning side of the relation if necessary
-        if ($rouletteSpin->getGameSession() !== $this) {
-            $rouletteSpin->setGameSession($this);
-        }
-
-        $this->rouletteSpin = $rouletteSpin;
-
-        return $this;
-    }
 }

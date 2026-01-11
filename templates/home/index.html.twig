@@ -27,6 +27,32 @@
                 <a class="btn xl muted" href="#" aria-disabled="true">Sloty (wkrótce)</a>
                 <a class="btn xl muted" href="#" aria-disabled="true">Inne Scamy (wkrótce)</a>
             </div>
+
+            <section class="articles-section">
+                <header class="section-header">
+                    <div>
+                        <h2>Artykuły</h2>
+                        <p>Fikcyjny poradnik memicznego kasyna. Same satyry.</p>
+                    </div>
+                    <a class="btn ghost" href="{{ path('articles_index') }}">Wszystkie artykuły</a>
+                </header>
+                <div class="articles-grid">
+                    {% for article in articles %}
+                        <article class="article-card">
+                            <a href="{{ path('articles_show', { slug: article.slug }) }}" class="article-media">
+                                <img src="{{ asset(article.image) }}" alt="{{ article.title }}">
+                            </a>
+                            <div class="article-body">
+                                <h3>
+                                    <a href="{{ path('articles_show', { slug: article.slug }) }}">{{ article.title }}</a>
+                                </h3>
+                                <p class="article-lead">{{ article.excerpt }}</p>
+                                <a class="btn ghost" href="{{ path('articles_show', { slug: article.slug }) }}">Czytaj dalej</a>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            </section>
         </main>
     </div>
 {% endblock %}

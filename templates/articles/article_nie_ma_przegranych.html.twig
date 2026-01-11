@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }}{% endblock %}
+
+{% block body %}
+  <div class="page article-page">
+    {% include 'partials/_main_header.html.twig' %}
+
+    <article class="article-content">
+      <header class="article-header">
+        <h1>{{ article.title }}</h1>
+        <p class="article-subtitle">{{ article.subtitle }}</p>
+      </header>
+      <img class="article-hero" src="{{ asset(article.image) }}" alt="{{ article.title }}">
+
+      <p>W kasynie nie ma przegranych. Są tylko osoby, które weszły na moment “po wodę” i jeszcze nie wróciły do wielkiego comebacku.</p>
+      <p>Kiedy ktoś mówi, że przegrał, to tak naprawdę nie docenia dramaturgii. Bohater nie przegrywa, bohater buduje napięcie. Publika klaszcze, a saldo robi suspens.</p>
+      <p>Najlepsza strategia to siedzieć wystarczająco długo, aż mit sam stanie się faktem. To właśnie dlatego krzesła w kasynie są takie wygodne.</p>
+
+      <div class="article-actions">
+        <a class="btn primary" href="{{ path('roulette_index') }}">Zakręć swoim losem</a>
+        <a class="btn ghost" href="{{ path('blackjack_index') }}">Weź los w swoje ręce</a>
+      </div>
+    </article>
+  </div>
+{% endblock %}

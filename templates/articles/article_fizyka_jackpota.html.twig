@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }}{% endblock %}
+
+{% block body %}
+  <div class="page article-page">
+    {% include 'partials/_main_header.html.twig' %}
+
+    <article class="article-content">
+      <header class="article-header">
+        <h1>{{ article.title }}</h1>
+        <p class="article-subtitle">{{ article.subtitle }}</p>
+      </header>
+      <img class="article-hero" src="{{ asset(article.image) }}" alt="{{ article.title }}">
+
+      <p>Według najnowszych badań prowadzonych na serwetce, szczęście nie znika, tylko zmienia stan skupienia. Dzisiaj jest parą, jutro kondensuje się w jackpot.</p>
+      <p>To dlatego kiedy “nie siada”, to znaczy, że jackpot się ładuje jak telefon w nocnej szafce. Im dłużej podłączasz, tym bardziej migają ikonki nadziei.</p>
+      <p>Każdy spin to eksperyment, a każdy eksperyment bez sukcesu to nauka. Wnioski? Wszechświat uwielbia konsekwencję, a konsekwencja to nowe szczęście w abonamencie.</p>
+
+      <div class="article-actions">
+        <a class="btn primary" href="{{ path('roulette_index') }}">Zakręć swoim losem</a>
+        <a class="btn ghost" href="{{ path('blackjack_index') }}">Weź los w swoje ręce</a>
+      </div>
+    </article>
+  </div>
+{% endblock %}

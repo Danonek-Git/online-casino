@@ -1,0 +1,26 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ article.title }}{% endblock %}
+
+{% block body %}
+  <div class="page article-page">
+    {% include 'partials/_main_header.html.twig' %}
+
+    <article class="article-content">
+      <header class="article-header">
+        <h1>{{ article.title }}</h1>
+        <p class="article-subtitle">{{ article.subtitle }}</p>
+      </header>
+      <img class="article-hero" src="{{ asset(article.image) }}" alt="{{ article.title }}">
+
+      <p>Wielu ludzi nie rozumie, że wygrana jest zawsze “za rogiem”. To zjawisko znane jako Syndrom Ostatniego Żetonika: gdy zostaje jeden, stajesz się prawie milionerem.</p>
+      <p>Prawdziwy profesjonalista nie przegrywa. On tylko inwestuje w narrację. Każda kolejna runda to dowód, że legenda o “jeszcze chwili” ma ciąg dalszy i sezon drugi.</p>
+      <p>Gdy usłyszysz w głowie głos “stop”, to znak, że przeznaczenie właśnie testuje twoją odporność. Ignoruj je i zbieraj żetony, bo one nie liczą strat.</p>
+
+      <div class="article-actions">
+        <a class="btn primary" href="{{ path('roulette_index') }}">Zakręć swoim losem</a>
+        <a class="btn ghost" href="{{ path('blackjack_index') }}">Weź los w swoje ręce</a>
+      </div>
+    </article>
+  </div>
+{% endblock %}

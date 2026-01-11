@@ -41,6 +41,9 @@ class Wallet
 
     public function setBalance(int $balance): static
     {
+        if ($balance < 0) {
+            throw new \InvalidArgumentException('Saldo nie może być ujemne.');
+        }
         $this->balance = $balance;
 
         return $this;
