@@ -49,19 +49,19 @@ final class RouletteService
     {
         $wallet = $user->getWallet();
         if ($wallet === null) {
-            throw new \RuntimeException('User wallet not found.');
+            throw new \RuntimeException('Nie znaleziono portfela.');
         }
 
         if ($amount <= 0) {
-            throw new \InvalidArgumentException('Bet amount must be greater than 0.');
+            throw new \InvalidArgumentException('Zakład musi być większy niż 0.');
         }
 
         if ($wallet->getBalance() < $amount) {
-            throw new \RuntimeException('Not enough balance.');
+            throw new \RuntimeException('Brak wystarczających środków na koncie.');
         }
 
         if ($round->getStatus() !== RouletteRound::STATUS_OPEN || $round->getEndsAt() <= new \DateTimeImmutable()) {
-            throw new \RuntimeException('Betting for this round is closed.');
+            throw new \RuntimeException('Zakłady dla tej rundy zostały zamknięte.');
         }
 
         $betType = strtolower(trim($betType));
@@ -172,6 +172,7 @@ final class RouletteService
 
             return [$isWin, $isWin ? $amount * 2 : 0];
         }
+
         return [false, 0];
     }
 
