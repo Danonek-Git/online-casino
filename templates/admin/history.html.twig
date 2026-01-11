@@ -39,27 +39,31 @@
     </section>
 
     <section class="admin-section">
-      <h2>Sesje gier</h2>
+      <h2>Blackjack</h2>
       <div class="admin-table">
         <div class="admin-table-row admin-table-head">
           <span>ID</span>
           <span>Użytkownik</span>
-          <span>Typ</span>
+          <span>Zakład</span>
           <span>Status</span>
+          <span>Wynik</span>
+          <span>Wypłata</span>
           <span>Start</span>
           <span>Koniec</span>
         </div>
-        {% for session in sessions %}
+        {% for hand in blackjackHands %}
           <div class="admin-table-row">
-            <span>#{{ session.id }}</span>
-            <span>{{ session.user ? session.user.email : '-' }}</span>
-            <span>{{ session.gameType }}</span>
-            <span>{{ session.status }}</span>
-            <span>{{ session.startedAt ? session.startedAt|date('Y-m-d H:i') : '-' }}</span>
-            <span>{{ session.finishedAt ? session.finishedAt|date('Y-m-d H:i') : '-' }}</span>
+            <span>#{{ hand.id }}</span>
+            <span>{{ hand.user ? hand.user.email : '-' }}</span>
+            <span>{{ hand.betAmount }}</span>
+            <span>{{ hand.status }}</span>
+            <span>{{ hand.result ?? '-' }}</span>
+            <span>{{ hand.payout ?? '-' }}</span>
+            <span>{{ hand.createdAt ? hand.createdAt|date('Y-m-d H:i') : '-' }}</span>
+            <span>{{ hand.finishedAt ? hand.finishedAt|date('Y-m-d H:i') : '-' }}</span>
           </div>
         {% else %}
-          <div class="admin-empty">Brak sesji.</div>
+          <div class="admin-empty">Brak gier blackjack.</div>
         {% endfor %}
       </div>
     </section>

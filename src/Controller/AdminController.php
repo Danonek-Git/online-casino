@@ -2,12 +2,10 @@
 
 namespace App\Controller;
 
-use App\Entity\Article;
 use App\Entity\User;
 use App\Entity\Wallet;
-use App\Repository\ArticleRepository;
 use App\Repository\BetRepository;
-use App\Repository\GameSessionRepository;
+use App\Repository\BlackjackHandRepository;
 use App\Repository\RouletteRoundRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,11 +17,6 @@ use Symfony\Component\Routing\Annotation\Route;
 #[Route('/admin', name: 'admin_')]
 final class AdminController extends AbstractController
 {
-    private const ARTICLE_IMAGES = [
-        '/assets/articles/roulette.webp',
-        '/assets/articles/blackjack.webp',
-        '/assets/articles/slots.webp',
-    ];
 
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(): Response
@@ -104,7 +97,7 @@ final class AdminController extends AbstractController
     }
 
     #[Route('/history', name: 'history', methods: ['GET'])]
-    public function history(BetRepository $betRepository, GameSessionRepository $gameSessionRepository): Response
+    public function history(BetRepository $betRepository, BlackjackHandRepository $blackjackHandRepository): Response
     {
         $bets = $betRepository->createQueryBuilder('bet')
             ->leftJoin('bet.user', 'user')
@@ -115,129 +108,43 @@ final class AdminController extends AbstractController
             ->getQuery()
             ->getResult();
 
-        $sessions = $gameSessionRepository->createQueryBuilder('session')
-            ->leftJoin('session.user', 'user')
+        $blackjackHands = $blackjackHandRepository->createQueryBuilder('hand')
+            ->leftJoin('hand.user', 'user')
             ->addSelect('user')
-            ->orderBy('session.startedAt', 'DESC')
+            ->orderBy('hand.createdAt', 'DESC')
             ->setMaxResults(200)
             ->getQuery()
             ->getResult();
 
         return $this->render('admin/history.html.twig', [
             'bets' => $bets,
-            'sessions' => $sessions,
+            'blackjackHands' => $blackjackHands,
         ]);
     }
 
     #[Route('/stats', name: 'stats', methods: ['GET'])]
-    public function stats(BetRepository $betRepository, RouletteRoundRepository $roundRepository): Response
+    public function stats(BetRepository $betRepository, RouletteRoundRepository $roundRepository, BlackjackHandRepository $blackjackHandRepository): Response
     {
-        $games = $roundRepository->countAllRounds();
-        $totalBets = $betRepository->sumBetAmounts();
-        $totalPayouts = $betRepository->sumPayouts();
+        $rouletteGames = $roundRepository->countAllRounds();
+        $blackjackGames = $blackjackHandRepository->count([]);
+        $games = $rouletteGames + $blackjackGames;
+
+        // Combine roulette and blackjack bets/payouts
+        $totalBets = $betRepository->sumBetAmounts() + $blackjackHandRepository->sumBetAmounts();
+        $totalPayouts = $betRepository->sumPayouts() + $blackjackHandRepository->sumPayouts();
+        // Player losses = what they bet minus what they won back
         $losses = $totalBets - $totalPayouts;
-        $balance = $totalPayouts - $totalBets;
+        // Casino balance = bets received minus payouts (positive = casino profit)
+        $balance = $totalBets - $totalPayouts;
 
         return $this->render('admin/stats.html.twig', [
             'games' => $games,
+            'rouletteGames' => $rouletteGames,
+            'blackjackGames' => $blackjackGames,
             'totalBets' => $totalBets,
             'totalPayouts' => $totalPayouts,
             'losses' => $losses,
             'balance' => $balance,
         ]);
-    }
-
-    #[Route('/articles', name: 'articles', methods: ['GET'])]
-    public function articles(ArticleRepository $articleRepository): Response
-    {
-        return $this->render('admin/articles/index.html.twig', [
-            'articles' => $articleRepository->findBy([], ['createdAt' => 'DESC']),
-            'images' => self::ARTICLE_IMAGES,
-        ]);
-    }
-
-    #[Route('/articles/new', name: 'articles_new', methods: ['GET', 'POST'])]
-    public function articlesNew(Request $request, EntityManagerInterface $entityManager): Response
-    {
-        if ($request->isMethod('POST')) {
-            if (!$this->isCsrfTokenValid('admin_article_new', (string) $request->request->get('_token'))) {
-                $this->addFlash('error', 'Nieprawidłowy token.');
-                return $this->redirectToRoute('admin_articles_new');
-            }
-
-            $title = trim((string) $request->request->get('title'));
-            $image = (string) $request->request->get('imagePath');
-            $content = trim((string) $request->request->get('content'));
-
-            if ($title === '' || $image === '') {
-                $this->addFlash('error', 'Uzupełnij tytuł i obrazek.');
-                return $this->redirectToRoute('admin_articles_new');
-            }
-
-            $article = new Article();
-            $article->setTitle($title);
-            $article->setImagePath($image);
-            $article->setContent($content !== '' ? $content : null);
-            $entityManager->persist($article);
-            $entityManager->flush();
-
-            $this->addFlash('success', 'Artykuł dodany.');
-            return $this->redirectToRoute('admin_articles');
-        }
-
-        return $this->render('admin/articles/form.html.twig', [
-            'article' => null,
-            'images' => self::ARTICLE_IMAGES,
-            'csrf_token' => $this->get('security.csrf.token_manager')->getToken('admin_article_new')->getValue(),
-        ]);
-    }
-
-    #[Route('/articles/{id}/edit', name: 'articles_edit', methods: ['GET', 'POST'])]
-    public function articlesEdit(Article $article, Request $request, EntityManagerInterface $entityManager): Response
-    {
-        if ($request->isMethod('POST')) {
-            if (!$this->isCsrfTokenValid('admin_article_edit_' . $article->getId(), (string) $request->request->get('_token'))) {
-                $this->addFlash('error', 'Nieprawidłowy token.');
-                return $this->redirectToRoute('admin_articles_edit', ['id' => $article->getId()]);
-            }
-
-            $title = trim((string) $request->request->get('title'));
-            $image = (string) $request->request->get('imagePath');
-            $content = trim((string) $request->request->get('content'));
-
-            if ($title === '' || $image === '') {
-                $this->addFlash('error', 'Uzupełnij tytuł i obrazek.');
-                return $this->redirectToRoute('admin_articles_edit', ['id' => $article->getId()]);
-            }
-
-            $article->setTitle($title);
-            $article->setImagePath($image);
-            $article->setContent($content !== '' ? $content : null);
-            $entityManager->flush();
-
-            $this->addFlash('success', 'Artykuł zaktualizowany.');
-            return $this->redirectToRoute('admin_articles');
-        }
-
-        return $this->render('admin/articles/form.html.twig', [
-            'article' => $article,
-            'images' => self::ARTICLE_IMAGES,
-            'csrf_token' => $this->get('security.csrf.token_manager')->getToken('admin_article_edit_' . $article->getId())->getValue(),
-        ]);
-    }
-
-    #[Route('/articles/{id}/delete', name: 'articles_delete', methods: ['POST'])]
-    public function articlesDelete(Article $article, Request $request, EntityManagerInterface $entityManager): Response
-    {
-        if (!$this->isCsrfTokenValid('admin_article_delete_' . $article->getId(), (string) $request->request->get('_token'))) {
-            $this->addFlash('error', 'Nieprawidłowy token.');
-            return $this->redirectToRoute('admin_articles');
-        }
-
-        $entityManager->remove($article);
-        $entityManager->flush();
-
-        $this->addFlash('success', 'Artykuł usunięty.');
-        return $this->redirectToRoute('admin_articles');
     }
 }

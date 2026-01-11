@@ -55,9 +55,6 @@ class BlackjackHand
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $finishedAt = null;
 
-    #[ORM\ManyToOne]
-    private ?GameSession $gameSession = null;
-
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -176,17 +173,6 @@ class BlackjackHand
     public function setFinishedAt(?\DateTimeImmutable $finishedAt): static
     {
         $this->finishedAt = $finishedAt;
-        return $this;
-    }
-
-    public function getGameSession(): ?GameSession
-    {
-        return $this->gameSession;
-    }
-
-    public function setGameSession(?GameSession $gameSession): static
-    {
-        $this->gameSession = $gameSession;
         return $this;
     }
 }

@@ -38,14 +38,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(options: ['default' => false])]
     private bool $isBlocked = false;
+
     #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
     private ?Wallet $wallet = null;
-
-    /**
-     * @var Collection<int, GameSession>
-     */
-    #[ORM\OneToMany(targetEntity: GameSession::class, mappedBy: 'user')]
-    private Collection $gameSessions;
 
     /**
      * @var Collection<int, Bet>
@@ -55,7 +50,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function __construct()
     {
-        $this->gameSessions = new ArrayCollection();
         $this->bets = new ArrayCollection();
     }
 
@@ -154,36 +148,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         $this->wallet = $wallet;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, GameSession>
-     */
-    public function getGameSessions(): Collection
-    {
-        return $this->gameSessions;
-    }
-
-    public function addGameSession(GameSession $gameSession): static
-    {
-        if (!$this->gameSessions->contains($gameSession)) {
-            $this->gameSessions->add($gameSession);
-            $gameSession->setUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removeGameSession(GameSession $gameSession): static
-    {
-        if ($this->gameSessions->removeElement($gameSession)) {
-            // set the owning side to null (unless already changed)
-            if ($gameSession->getUser() === $this) {
-                $gameSession->setUser(null);
-            }
-        }
 
         return $this;
     }
