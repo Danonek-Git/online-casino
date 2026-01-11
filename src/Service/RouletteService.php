@@ -15,7 +15,6 @@ final class RouletteService
     private const ROUND_DURATION_SECONDS = 30;
     private const ROUND_RESULT_PAUSE_SECONDS = 15;
     private const MIN_BET_AMOUNT = 1;
-    private const MAX_BET_AMOUNT = 5000;
     private const MAX_BETS_PER_ROUND = 10;
     private const DUPLICATE_BET_WINDOW_SECONDS = 3;
 
@@ -58,10 +57,6 @@ final class RouletteService
         $wallet = $user->getWallet();
         if ($wallet === null) {
             throw new \RuntimeException('Nie znaleziono portfela.');
-        }
-
-        if ($amount < self::MIN_BET_AMOUNT || $amount > self::MAX_BET_AMOUNT) {
-            throw new \InvalidArgumentException('Kwota zakładu jest poza dozwolonym zakresem.');
         }
 
         if ($amount <= 0) {

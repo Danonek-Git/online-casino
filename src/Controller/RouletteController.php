@@ -20,7 +20,7 @@ final class RouletteController extends AbstractController
     private const CHAT_MAX_LENGTH = 125;
     private const CHAT_TTL_SECONDS = 3600;
     private const CHAT_MAX_PER_ROUND = 5;
-    private const LEADERBOARD_SIZE = 5;
+    private const LEADERBOARD_SIZE = 1;
 
     #[Route('/roulette', name: 'roulette_index', methods: ['GET'])]
     public function index(
@@ -279,8 +279,14 @@ final class RouletteController extends AbstractController
             return ['roundId' => null, 'winners' => [], 'losers' => []];
         }
 
-        $winners = $betRepository->getTopWinnersByRound($roundId, self::LEADERBOARD_SIZE);
-        $losers = $betRepository->getTopLosersByRound($roundId, self::LEADERBOARD_SIZE);
+        $winners = array_map(
+            fn (array $entry) => ['user' => $this->extractNickname($entry['user']), 'amount' => $entry['amount']],
+            $betRepository->getTopWinnersByRound($roundId, self::LEADERBOARD_SIZE)
+        );
+        $losers = array_map(
+            fn (array $entry) => ['user' => $this->extractNickname($entry['user']), 'amount' => $entry['amount']],
+            $betRepository->getTopLosersByRound($roundId, self::LEADERBOARD_SIZE)
+        );
         return [
             'roundId' => $roundId,
             'winners' => $winners,

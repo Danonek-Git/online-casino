@@ -39,7 +39,7 @@ const initRoulette = () => {
     if (asideToggle && asideEl) {
         const applyAsideState = (collapsed) => {
             roulettePage.classList.toggle('is-aside-collapsed', collapsed);
-            asideToggle.textContent = collapsed ? 'Pokaż panel' : 'Ukryj panel';
+            asideToggle.textContent = collapsed ? 'Pokaż Chat' : 'Ukryj Chat';
         };
         const saved = sessionStorage.getItem('roulette.aside.collapsed') === '1';
         applyAsideState(saved);

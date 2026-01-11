@@ -71,16 +71,64 @@
           </div>
         </section>
 
-        <section class="roulette-history">
-          <h2>Ostatnie losowania</h2>
-          <div class="history-list" data-history>
-            {% if lastRounds is empty %}
-              <span class="history-empty">Brak wyników.</span>
-            {% else %}
-              {% for item in lastRounds|reverse %}
-                <span class="history-item {{ item.resultColor }}{% if loop.last %} is-latest{% endif %}">{{ item.resultNumber }}</span>
-              {% endfor %}
-            {% endif %}
+        <section class="roulette-info-row">
+          <div class="roulette-history">
+            <h2>Ostatnie losowania</h2>
+            <div class="history-list" data-history>
+              {% if lastRounds is empty %}
+                <span class="history-empty">Brak wyników.</span>
+              {% else %}
+                {% for item in lastRounds|reverse %}
+                  <span class="history-item {{ item.resultColor }}{% if loop.last %} is-latest{% endif %}">{{ item.resultNumber }}</span>
+                {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="roulette-leaderboards">
+            <div class="leaderboard-panel compact">
+              <header>
+                <h2>Top wygrana</h2>
+                <span data-leaderboard-round>
+                  {% if leaderboard.roundId %}
+                    Runda #{{ leaderboard.roundId }}
+                  {% else %}
+                    Brak rundy
+                  {% endif %}
+                </span>
+              </header>
+              <ol class="leaderboard-list compact" data-leaderboard-winners>
+                {% if leaderboard.winners is empty %}
+                  <li class="leaderboard-empty">Brak danych.</li>
+                {% else %}
+                  {% for entry in leaderboard.winners %}
+                    <li>
+                      <span class="leaderboard-user">{{ entry.user }}</span>
+                      <strong>+{{ entry.amount }} zł</strong>
+                    </li>
+                  {% endfor %}
+                {% endif %}
+              </ol>
+            </div>
+
+            <div class="leaderboard-panel compact">
+              <header>
+                <h2>Top przegrana</h2>
+                <span class="leaderboard-sub">Poprzednia runda</span>
+              </header>
+              <ol class="leaderboard-list compact" data-leaderboard-losers>
+                {% if leaderboard.losers is empty %}
+                  <li class="leaderboard-empty">Brak danych.</li>
+                {% else %}
+                  {% for entry in leaderboard.losers %}
+                    <li>
+                      <span class="leaderboard-user">{{ entry.user }}</span>
+                      <strong>-{{ entry.amount }} zł</strong>
+                    </li>
+                  {% endfor %}
+                {% endif %}
+              </ol>
+            </div>
           </div>
         </section>
 
@@ -155,54 +203,10 @@
       </main>
 
       <aside class="roulette-aside" data-roulette-aside>
-        <div class="leaderboard-panel">
-          <header>
-            <h2>Największe wygrane</h2>
-            <span data-leaderboard-round>
-              {% if leaderboard.roundId %}
-                Runda #{{ leaderboard.roundId }}
-              {% else %}
-                Brak rundy
-              {% endif %}
-            </span>
-          </header>
-          <ol class="leaderboard-list" data-leaderboard-winners>
-            {% if leaderboard.winners is empty %}
-              <li class="leaderboard-empty">Brak danych.</li>
-            {% else %}
-              {% for entry in leaderboard.winners %}
-                <li>
-                  <span class="leaderboard-user">{{ entry.user }}</span>
-                  <strong>+{{ entry.amount }} zł</strong>
-                </li>
-              {% endfor %}
-            {% endif %}
-          </ol>
-        </div>
-
-        <div class="leaderboard-panel">
-          <header>
-            <h2>Największe przegrane</h2>
-            <span class="leaderboard-sub">Poprzednia runda</span>
-          </header>
-          <ol class="leaderboard-list" data-leaderboard-losers>
-            {% if leaderboard.losers is empty %}
-              <li class="leaderboard-empty">Brak danych.</li>
-            {% else %}
-              {% for entry in leaderboard.losers %}
-                <li>
-                  <span class="leaderboard-user">{{ entry.user }}</span>
-                  <strong>-{{ entry.amount }} zł</strong>
-                </li>
-              {% endfor %}
-            {% endif %}
-          </ol>
-        </div>
-
         <div class="chat-panel">
           <header>
             <h2>Chat ruletki</h2>
-            <span class="leaderboard-sub">Na żywo, bez historii</span>
+            <span class="leaderboard-sub">Chat Live</span>
           </header>
           <div class="chat-messages" data-chat-messages>
             {% if chatMessages is empty %}
