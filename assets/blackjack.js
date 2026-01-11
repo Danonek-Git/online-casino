@@ -33,23 +33,23 @@ const playSound = (type) => {
 const RESULT_CONFIG = {
     win: {
         icon: '✓',
-        title: 'Wygrana!',
-        message: 'Gratulacje! Pokonałeś krupiera.'
+        title: 'Wygrałeś!',
+        message: 'Gratulacje, pokonałeś krupiera.'
     },
     blackjack: {
         icon: '★',
         title: 'Blackjack!',
-        message: 'Niesamowite! Trafiony blackjack!'
+        message: 'Gratulacje, trafiłeś 21.'
     },
     push: {
         icon: '=',
-        title: 'Remis',
-        message: 'Zakład zostaje zwrócony.'
+        title: 'Remis!',
+        message: 'Dobrałeś tyle samo co krupier, zakład zostaje zwrócony.'
     },
     lose: {
         icon: '✗',
-        title: 'Przegrana',
-        message: 'Tym razem nie udało się.'
+        title: 'Przegrałeś!',
+        message: 'Tym razem się nie udało.'
     }
 };
 
