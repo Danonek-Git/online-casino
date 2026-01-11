@@ -35,19 +35,6 @@ class RouletteRoundRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findExpiredOpenRound(\DateTimeImmutable $now): ?RouletteRound
-    {
-        return $this->createQueryBuilder('round')
-            ->andWhere('round.status = :status')
-            ->andWhere('round.endsAt <= :now')
-            ->setParameter('status', RouletteRound::STATUS_OPEN)
-            ->setParameter('now', $now)
-            ->orderBy('round.endsAt', 'ASC')
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
     public function countAllRounds(): int
     {
         return (int) $this->createQueryBuilder('round')

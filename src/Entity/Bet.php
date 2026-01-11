@@ -37,10 +37,6 @@ class Bet
     #[ORM\Column]
     private ?\DateTimeImmutable $placedAt = null;
 
-    #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: true)]
-    private ?GameSession $gameSession = null;
-
     #[ORM\ManyToOne(inversedBy: 'bets')]
     #[ORM\JoinColumn(nullable: false)]
     private ?RouletteRound $round = null;
@@ -126,18 +122,6 @@ class Bet
     public function setPlacedAt(\DateTimeImmutable $placedAt): static
     {
         $this->placedAt = $placedAt;
-
-        return $this;
-    }
-
-    public function getGameSession(): ?GameSession
-    {
-        return $this->gameSession;
-    }
-
-    public function setGameSession(?GameSession $gameSession): static
-    {
-        $this->gameSession = $gameSession;
 
         return $this;
     }

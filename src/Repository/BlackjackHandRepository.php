@@ -47,4 +47,24 @@ class BlackjackHandRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function sumBetAmounts(): int
+    {
+        $result = $this->createQueryBuilder('h')
+            ->select('COALESCE(SUM(h.betAmount), 0)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (int) $result;
+    }
+
+    public function sumPayouts(): int
+    {
+        $result = $this->createQueryBuilder('h')
+            ->select('COALESCE(SUM(h.payout), 0)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return (int) $result;
+    }
 }

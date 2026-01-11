@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\BlackjackHand;
-use App\Entity\GameSession;
 use App\Entity\User;
 use App\Repository\BlackjackHandRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -15,7 +14,6 @@ final class BlackjackService
     private const SUITS = ['H', 'D', 'C', 'S'];
     private const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
     private const MIN_BET_AMOUNT = 1;
-    private const MAX_BET_AMOUNT = 5000;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -52,11 +50,8 @@ final class BlackjackService
             throw new \RuntimeException('Nie znaleziono portfela użytkownika.');
         }
 
-        if ($betAmount <= 0) {
+        if ($betAmount < self::MIN_BET_AMOUNT) {
             throw new \InvalidArgumentException('Zakład musi być większy niż 0.');
-        }
-        if ($betAmount < self::MIN_BET_AMOUNT || $betAmount > self::MAX_BET_AMOUNT) {
-            throw new \InvalidArgumentException('Kwota zakładu jest poza dozwolonym zakresem.');
         }
 
         if ($wallet->getBalance() < $betAmount) {
@@ -65,15 +60,9 @@ final class BlackjackService
 
         $wallet->setBalance($wallet->getBalance() - $betAmount);
 
-        $gameSession = new GameSession();
-        $gameSession->setUser($user);
-        $gameSession->setGameType(GameSession::TYPE_BLACKJACK);
-        $this->entityManager->persist($gameSession);
-
         $hand = new BlackjackHand();
         $hand->setUser($user);
         $hand->setBetAmount($betAmount);
-        $hand->setGameSession($gameSession);
         $hand->setStatus(BlackjackHand::STATUS_PLAYING);
 
         $deck = $this->createShuffledDeck();
@@ -116,12 +105,6 @@ final class BlackjackService
             $hand->setResult(BlackjackHand::RESULT_LOSE);
             $hand->setPayout(0);
             $hand->setFinishedAt(new \DateTimeImmutable());
-
-            $gameSession = $hand->getGameSession();
-            if ($gameSession !== null) {
-                $gameSession->setStatus(GameSession::STATUS_FINISHED);
-                $gameSession->setFinishedAt(new \DateTimeImmutable());
-            }
         } elseif ($playerValue === 21) {
             $this->stand($hand);
             return $hand;
@@ -205,12 +188,6 @@ final class BlackjackService
             if ($wallet !== null) {
                 $wallet->setBalance($wallet->getBalance() + $payout);
             }
-        }
-
-        $gameSession = $hand->getGameSession();
-        if ($gameSession !== null) {
-            $gameSession->setStatus(GameSession::STATUS_FINISHED);
-            $gameSession->setFinishedAt(new \DateTimeImmutable());
         }
     }
 
