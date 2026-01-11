@@ -57,7 +57,7 @@ final class AdminController extends AbstractController
         }
 
         $entityManager->flush();
-        $this->addFlash('success', 'Dodano +1000 wszystkim użytkownikom.');
+        $this->addFlash('success', 'Dodano +1000 punktów do salda wszystkim użytkownikom.');
         return $this->redirectToRoute('admin_users');
     }
 
