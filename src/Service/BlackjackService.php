@@ -38,20 +38,20 @@ final class BlackjackService
     {
         $existingHand = $this->getActiveHand($user);
         if ($existingHand !== null) {
-            throw new \RuntimeException('You already have an active hand.');
+            throw new \RuntimeException('Masz już rozdane karty.');
         }
 
         $wallet = $user->getWallet();
         if ($wallet === null) {
-            throw new \RuntimeException('User wallet not found.');
+            throw new \RuntimeException('Nie znaleziono portfela użytkownika.');
         }
 
         if ($betAmount <= 0) {
-            throw new \InvalidArgumentException('Bet amount must be greater than 0.');
+            throw new \InvalidArgumentException('Zakład musi być większy niż 0.');
         }
 
         if ($wallet->getBalance() < $betAmount) {
-            throw new \RuntimeException('Not enough balance.');
+            throw new \RuntimeException('Brak wystarczających środków.');
         }
 
         $wallet->setBalance($wallet->getBalance() - $betAmount);
@@ -83,7 +83,7 @@ final class BlackjackService
     public function hit(BlackjackHand $hand): BlackjackHand
     {
         if ($hand->getStatus() !== BlackjackHand::STATUS_PLAYING) {
-            throw new \RuntimeException('Cannot hit - hand is not in playing state.');
+            throw new \RuntimeException('Nie można dobrać, gra nie jest aktywna.');
         }
 
         $deck = $this->createShuffledDeck();
@@ -122,7 +122,7 @@ final class BlackjackService
     public function stand(BlackjackHand $hand): BlackjackHand
     {
         if ($hand->getStatus() !== BlackjackHand::STATUS_PLAYING) {
-            throw new \RuntimeException('Cannot stand - hand is not in playing state.');
+            throw new \RuntimeException('Nie można dobrać, gra nie jest aktywna.');
         }
 
         $hand->setStatus(BlackjackHand::STATUS_DEALER_TURN);
