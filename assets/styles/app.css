@@ -538,7 +538,8 @@ a {
 
 .roulette-page {
     display: grid;
-    gap: 28px;
+    gap: 16px;
+    align-content: start;
 }
 
 .roulette-header {
