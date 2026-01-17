@@ -40,8 +40,11 @@ php -S 127.0.0.1:8000 -t public
 
 Then open http://127.0.0.1:8000.
 
+php bin/console asset-map:compile
+
 ## Tests
 
 ```bash
 vendor/bin/phpunit
 ```
+
